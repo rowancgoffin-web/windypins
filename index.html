@@ -337,6 +337,15 @@
             </div>
             <div class="field-row" style="margin-top:10px;">
               <div class="field-wrap">
+                <label>Set rotor diameter for all (m)</label>
+                <input type="text" id="bulkRDInput" value="90">
+              </div>
+              <div style="display:flex;align-items:flex-end;">
+                <button class="btn btn-secondary" id="bulkRDApplyBtn" style="width:100%;">Apply RD to all</button>
+              </div>
+            </div>
+            <div class="field-row" style="margin-top:10px;">
+              <div class="field-wrap">
                 <label>Set hub height for all (m)</label>
                 <input type="text" id="bulkHHInput" value="80">
               </div>
@@ -344,7 +353,7 @@
                 <button class="btn btn-secondary" id="bulkHHApplyBtn" style="width:100%;">Apply HH to all</button>
               </div>
             </div>
-            <div class="hint" style="margin-top:6px;margin-bottom:0;">Overrides every sited turbine's power coefficient at once, including Custom — for calibration testing, not a library change.</div>
+            <div class="hint" style="margin-top:6px;margin-bottom:0;">Cp and hub height override every sited turbine, including library models — for calibration testing, not a library change. Rotor diameter applies to Custom-model turbines only: library rotors are fixed by the model class (switch all to Custom first to override).</div>
           </div>
 
           <div id="turbineCards"></div>
@@ -702,6 +711,29 @@ document.getElementById('bulkCpApplyBtn').addEventListener('click', () => {
       t.cpMax = val;
     }
   });
+  renderTurbineCards();
+  recalculate();
+});
+
+document.getElementById('bulkRDApplyBtn').addEventListener('click', () => {
+  const val = parseFloat(document.getElementById('bulkRDInput').value);
+  if (isNaN(val) || val < 10 || val > 260){
+    alert('Enter a rotor diameter between 10 and 260 m.');
+    return;
+  }
+  // Custom-only by design: a library model's rotor diameter is part of what
+  // the model IS — silently resizing a "V90" to 120 m would make every label
+  // and report line a lie. Cp/HH overrides are calibration knobs; rotor size
+  // is identity. Bulk "Apply to all" with Custom selected converts the fleet
+  // first, after which this applies everywhere.
+  let applied = 0, skipped = 0;
+  turbines.forEach(t => {
+    if (t.model === 'custom' && t.customSpec){ t.customSpec.rotorD = val; applied++; }
+    else skipped++;
+  });
+  if (skipped > 0){
+    alert(`Rotor diameter applied to ${applied} Custom turbine(s); ${skipped} library-model turbine(s) unchanged (rotor is fixed by the model class — use "Apply to all sited turbines" with Custom selected to convert them first).`);
+  }
   renderTurbineCards();
   recalculate();
 });
