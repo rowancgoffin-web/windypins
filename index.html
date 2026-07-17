@@ -1715,7 +1715,7 @@ async function fetchIAV(lat, lng){
     clearTimeout(timeout);
     if (!res.ok) throw new Error('era5 endpoint error');
     const data = await res.json();
-    iavData = { annualMeans: data.annual_means_100m, nYears: data.n_years };
+    iavData = { annualMeans: data.annual_means_100m, nYears: data.n_years, source: 'era5' };
     era5Stats = { icing: data.icing, hysteresis: data.hysteresis, nYears: data.n_years };
     updateEra5Hints();
   } catch (err) {
@@ -1729,7 +1729,7 @@ async function fetchIAV(lat, lng){
       clearTimeout(t2);
       if (!res2.ok) throw new Error('iav endpoint error');
       const d2 = await res2.json();
-      iavData = { annualMeans: d2.annual_means_50m, nYears: d2.n_years };
+      iavData = { annualMeans: d2.annual_means_50m, nYears: d2.n_years, source: 'power' };
     } catch (err2) {
       iavData = null; // literature fallback will be used
     }
@@ -1965,6 +1965,8 @@ async function recalculate(){
   // ---- Uncertainty component build-up ----
   // Resource: 9% on the GWA direction-weighted path, 13% on the coarser NASA
   // POWER fallback (50 km grid, no rose, heuristic Weibull k), +3% RSS'd in
+  // NB: IAV series is ERA5 (~31 km hourly) when available, NASA POWER monthly
+  // otherwise — the note text below reports whichever actually supplied it.
   // if any turbine trips the terrain-complexity flag (the Jackson-Hunt
   // correction degrades there). Wake: 3% floor + 15% of the calculated wake
   // loss (EYA convention — wake uncertainty scales with wake magnitude).
@@ -1980,8 +1982,11 @@ async function recalculate(){
   if (iavAuto){
     document.getElementById('iavInput').value = (iavComputed !== null ? iavComputed : iavFallback).toFixed(1);
   }
+  const iavSrcTxt = iavData && iavData.source === 'era5'
+    ? 'ERA5 hourly, ~31 km grid'
+    : 'NASA POWER / MERRA-2 monthly, ~50 km grid';
   document.getElementById('iavSourceNote').textContent = iavComputed !== null
-    ? `IAV: computed from ${iavData.nYears} years of reanalysis at this site (detrended, energy-based). Coarse ~50 km grid — a regional figure, not microscale.`
+    ? `IAV: computed from ${iavData.nYears} years of ${iavSrcTxt} at this site (detrended, energy-based). Synoptic-scale — a regional figure, not microscale.`
     : `IAV: literature default (${iavFallback}% ${offshoreMode ? 'UK waters, DNV' : 'UK onshore, Garrad Hassan/DNV'}) — site record unavailable.`;
   const iavPct = parseFloat(document.getElementById('iavInput').value) || iavFallback;
 
