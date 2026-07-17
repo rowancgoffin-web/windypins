@@ -1,0 +1,3385 @@
+LONDON ARRAY — VALIDATION SITE FILE (REAL LAYOUT, v12)
+======================================================================
+175 x 3.6 MW / 120 m rotor class (hub 87 m) at the REAL as-built turbine
+positions (source: OpenStreetMap, retrieved via the tool's own
+/api/nearby-turbines endpoint, July 2026; median nearest-neighbour
+spacing 645 m = 5.38 D). Replaces the earlier synthetic ~700 m grid, so
+the wake result tests the wake model against the actual layout geometry
+rather than an approximation of it.
+
+Site centre, losses, roughness (water), offshore mode and all turbine
+specs are IDENTICAL to the synthetic-grid file — the layout is the only
+variable changed between the two runs.
+
+Load via Siting tab -> "Load site from file". Compare net capacity
+factor (P50) against the real farm's multi-year average of ~38-40%.
+Synthetic-grid run (v12 model): 42.1% net CF, 9.1% wake loss.
+Real-array wake losses for this layout are typically ~10-12%.
+======================================================================
+
+===SITE-DATA (do not edit below this line — used to re-load this site into the tool)===
+{
+  "savedAt": "generated-validation-case-real-layout",
+  "lossSchema": 2,
+  "siteCentre": {
+    "lat": 51.561133179577105,
+    "lng": 1.4826163868295228
+  },
+  "turbines": [
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6983397,
+      "lng": 1.5006927,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5785462,
+      "lng": 1.4576231,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5976721,
+      "lng": 1.4242351,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6044291,
+      "lng": 1.4318021,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.612254,
+      "lng": 1.4183653,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5758516,
+      "lng": 1.5288299,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6336881,
+      "lng": 1.4103527,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5749548,
+      "lng": 1.5524366,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5778993,
+      "lng": 1.5690465,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6507718,
+      "lng": 1.4342919,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6241178,
+      "lng": 1.5714078,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.65698,
+      "lng": 1.5551284,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6744988,
+      "lng": 1.5437021,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5767418,
+      "lng": 1.5050598,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5776181,
+      "lng": 1.4815043,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5788068,
+      "lng": 1.5453702,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5797042,
+      "lng": 1.5216504,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5805679,
+      "lng": 1.4979741,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5813949,
+      "lng": 1.474176,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5817139,
+      "lng": 1.5619,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5820773,
+      "lng": 1.4503547,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5826166,
+      "lng": 1.5382739,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5836063,
+      "lng": 1.5145561,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5847109,
+      "lng": 1.4902988,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5853041,
+      "lng": 1.4671696,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5855839,
+      "lng": 1.5549467,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5862002,
+      "lng": 1.4433705,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5864812,
+      "lng": 1.5311264,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5874138,
+      "lng": 1.5071958,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5882162,
+      "lng": 1.4838637,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.589162,
+      "lng": 1.4600539,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5894496,
+      "lng": 1.5477798,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5899636,
+      "lng": 1.436367,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5903449,
+      "lng": 1.5240097,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5911904,
+      "lng": 1.500434,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5921176,
+      "lng": 1.4767673,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5923866,
+      "lng": 1.5643695,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5929834,
+      "lng": 1.452946,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5932176,
+      "lng": 1.5406516,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5938403,
+      "lng": 1.4293412,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5941844,
+      "lng": 1.5170256,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5950345,
+      "lng": 1.4933183,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5958938,
+      "lng": 1.4695086,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5961615,
+      "lng": 1.5572741,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5968028,
+      "lng": 1.4458304,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5971967,
+      "lng": 1.5333735,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5979717,
+      "lng": 1.50988,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5989,
+      "lng": 1.4860799,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.5997513,
+      "lng": 1.4625031,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6000509,
+      "lng": 1.5501392,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6008896,
+      "lng": 1.5263904,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6018297,
+      "lng": 1.5027827,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6027878,
+      "lng": 1.4788618,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6030381,
+      "lng": 1.5666998,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6036656,
+      "lng": 1.4554474,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6039896,
+      "lng": 1.5433067,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6047605,
+      "lng": 1.5194351,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6054718,
+      "lng": 1.495464,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6065625,
+      "lng": 1.4719791,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.606844,
+      "lng": 1.5596953,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6074282,
+      "lng": 1.4483724,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.607733,
+      "lng": 1.5359765,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6082474,
+      "lng": 1.4246855,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6086028,
+      "lng": 1.5122586,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.609493,
+      "lng": 1.488591,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6103939,
+      "lng": 1.4648122,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6106934,
+      "lng": 1.5525797,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6112529,
+      "lng": 1.4412761,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6116016,
+      "lng": 1.5292968,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6124088,
+      "lng": 1.5051227,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.613305,
+      "lng": 1.4814551,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6139886,
+      "lng": 1.5691084,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.614219,
+      "lng": 1.4578377,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6142459,
+      "lng": 1.5461716,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6153371,
+      "lng": 1.5217133,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6164288,
+      "lng": 1.4983299,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6171856,
+      "lng": 1.4743181,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6174532,
+      "lng": 1.5620836,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6180498,
+      "lng": 1.4506089,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6183564,
+      "lng": 1.5383658,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6188509,
+      "lng": 1.4271859,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6191502,
+      "lng": 1.5145942,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6201267,
+      "lng": 1.4909706,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6209717,
+      "lng": 1.4672411,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6213328,
+      "lng": 1.5549583,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6218803,
+      "lng": 1.4435126,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6221538,
+      "lng": 1.5312588,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6227005,
+      "lng": 1.4200896,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6230617,
+      "lng": 1.5075013,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6239756,
+      "lng": 1.4839139,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6247899,
+      "lng": 1.4601854,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6251138,
+      "lng": 1.5478823,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6254835,
+      "lng": 1.436802,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6259773,
+      "lng": 1.5241731,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6265858,
+      "lng": 1.4128821,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6269296,
+      "lng": 1.5004359,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.627793,
+      "lng": 1.4767567,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6279915,
+      "lng": 1.5643212,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6286696,
+      "lng": 1.4530504,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6289755,
+      "lng": 1.5407957,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6298947,
+      "lng": 1.5171001,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6307202,
+      "lng": 1.4934614,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.631628,
+      "lng": 1.4697532,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6318835,
+      "lng": 1.5573882,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6324997,
+      "lng": 1.4460962,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6327918,
+      "lng": 1.5336983,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6333318,
+      "lng": 1.4224073,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6336683,
+      "lng": 1.5100327,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6345688,
+      "lng": 1.486252,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6354452,
+      "lng": 1.4625863,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6357625,
+      "lng": 1.5503315,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6363097,
+      "lng": 1.4389999,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6366264,
+      "lng": 1.5265943,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.637522,
+      "lng": 1.5028542,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.63836,
+      "lng": 1.479146,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6392676,
+      "lng": 1.4555596,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6396538,
+      "lng": 1.5431859,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.640138,
+      "lng": 1.4317924,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6404738,
+      "lng": 1.5193955,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6413568,
+      "lng": 1.4957579,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6421695,
+      "lng": 1.4721724,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6430903,
+      "lng": 1.4483724,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6434399,
+      "lng": 1.5361901,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6443156,
+      "lng": 1.5123504,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6451601,
+      "lng": 1.488765,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6460927,
+      "lng": 1.4650665,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6469611,
+      "lng": 1.4413679,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6472412,
+      "lng": 1.5290232,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6481181,
+      "lng": 1.5053257,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6489564,
+      "lng": 1.4816184,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6499832,
+      "lng": 1.4582234,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.650226,
+      "lng": 1.5455529,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6511202,
+      "lng": 1.521897,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6520029,
+      "lng": 1.4981578,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6531675,
+      "lng": 1.4739228,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6537354,
+      "lng": 1.4509028,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6542421,
+      "lng": 1.5382024,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6549736,
+      "lng": 1.5148219,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6557849,
+      "lng": 1.4911031,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6566987,
+      "lng": 1.4673726,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6575502,
+      "lng": 1.4438896,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6578859,
+      "lng": 1.5314318,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6587997,
+      "lng": 1.5076947,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6596505,
+      "lng": 1.4839352,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6602741,
+      "lng": 1.4606446,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6608382,
+      "lng": 1.5480128,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.661764,
+      "lng": 1.5243868,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.66264,
+      "lng": 1.5005983,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6634901,
+      "lng": 1.4768805,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6643407,
+      "lng": 1.453323,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6642735,
+      "lng": 1.5409581,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6658479,
+      "lng": 1.5165809,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.666466,
+      "lng": 1.4934807,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6673346,
+      "lng": 1.469874,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6684963,
+      "lng": 1.5337313,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.669404,
+      "lng": 1.5101149,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6703169,
+      "lng": 1.486396,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6711615,
+      "lng": 1.4626878,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6723795,
+      "lng": 1.5266852,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6733307,
+      "lng": 1.502774,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6741621,
+      "lng": 1.4793616,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6762359,
+      "lng": 1.5196575,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6769731,
+      "lng": 1.496278,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6779309,
+      "lng": 1.4722353,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6791745,
+      "lng": 1.5363023,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6799859,
+      "lng": 1.5125331,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6809304,
+      "lng": 1.4888356,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6830111,
+      "lng": 1.5291663,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6839124,
+      "lng": 1.5054967,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6849575,
+      "lng": 1.481313,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6868049,
+      "lng": 1.5219888,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6876923,
+      "lng": 1.4983618,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6904396,
+      "lng": 1.5144469,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6912904,
+      "lng": 1.4920069,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    },
+    {
+      "model": "swt_3p6_120",
+      "lat": 51.6944598,
+      "lng": 1.5078068,
+      "hubHeight": 87,
+      "customSpec": {
+        "name": "Custom",
+        "manufacturer": "User-defined",
+        "type": "custom",
+        "ratedKW": 2000,
+        "rotorD": 90,
+        "hubHeight": 80,
+        "vCutIn": 3,
+        "vRated": 12,
+        "vCutOut": 25,
+        "cpMax": 0.45,
+        "editable": true
+      }
+    }
+  ],
+  "lossVals": {
+    "extWake": 0,
+    "blockage": 3,
+    "turbineAvailability": 4,
+    "bopAvailability": 1,
+    "gridAvailability": 0,
+    "electrical": 2,
+    "exportCable": 0,
+    "parasitic": 0,
+    "turbinePerformance": 1,
+    "hysteresis": 0,
+    "pcAdjust": 0,
+    "icing": 0.1,
+    "soiling": 0,
+    "icingShutdown": 0,
+    "tempShutdown": 0.1,
+    "degradation": 0.5,
+    "wsm": 0,
+    "curtailment": 2,
+    "envCurtailment": 0,
+    "opsCurtailment": 0,
+    "other": 1
+  },
+  "manualAdj": "0.0",
+  "uncertaintyPct": "12.0",
+  "shearExponent": "0.11",
+  "shearLaw": "power",
+  "roughness": "0.0",
+  "offshoreMode": true
+}
+===END SITE-DATA===

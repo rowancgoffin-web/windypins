@@ -1295,11 +1295,19 @@ function extrapolateToHub(vRef, hRef, hTarget, law, alpha, z0){
   return vRef * Math.pow(hTarget / hRef, alpha);
 }
 
+// 0 is a legitimate value for roughness (water preset) — `|| default`
+// silently replaces it with the default. Number.isFinite keeps real zeros
+// and only substitutes on NaN/undefined.
+function numOrDefault(v, dflt){
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : dflt;
+}
+
 function getShearSettings(){
   return {
     law: document.getElementById('shearLawSelect').value,
-    alpha: parseFloat(document.getElementById('shearExponent').value) || 0.14,
-    z0: parseFloat(document.getElementById('roughnessSelect').value) || 0.03
+    alpha: numOrDefault(document.getElementById('shearExponent').value, 0.14),
+    z0: numOrDefault(document.getElementById('roughnessSelect').value, 0.03)
   };
 }
 
@@ -1595,7 +1603,7 @@ function gaussianDeficit(x, y, dz, D0, kStar, Ct){
 // the wake centreline simultaneously, combined RSS. Deliberately conservative;
 // the direction-weighted model below is used whenever a rose is available.
 function wakeDeficitFor(turbine, others, rotorD, offshoreMode){
-  const z0 = parseFloat(document.getElementById('roughnessSelect').value) || 0.03;
+  const z0 = numOrDefault(document.getElementById('roughnessSelect').value, 0.03);
   const mySpec = getTurbineSpec(turbine);
   let sumSq = 0;
   others.forEach(o => {

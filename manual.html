@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Manual — Turbine Yield Estimator</title>
+<title>Manual — Windypins</title>
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1.6" fill="%23b5650d"/><path d="M12 12 L12 3.5 C15 3.5 16.5 6 15.2 8.8 Z" fill="%23b5650d"/><path d="M12 12 L19.5 15.5 C18.3 18.2 15.2 19 13.2 16.8 Z" fill="%230e7f92"/><path d="M12 12 L6 17 C4 14.7 4.8 11.4 7.8 10.6 Z" fill="%23c0392b"/><line x1="12" y1="12" x2="12" y2="21" stroke="%238a94a3" stroke-width="1.4"/></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -92,7 +92,7 @@
   <div class="brand">
     <button class="menu-toggle" id="menuToggle" aria-label="Toggle contents menu"><span></span></button>
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><circle cx="12" cy="12" r="1.6" fill="#b5650d"/><path d="M12 12 L12 3.5 C15 3.5 16.5 6 15.2 8.8 Z" fill="#b5650d" opacity="0.8"/><path d="M12 12 L19.5 15.5 C18.3 18.2 15.2 19 13.2 16.8 Z" fill="#0e7f92" opacity="0.8"/><path d="M12 12 L6 17 C4 14.7 4.8 11.4 7.8 10.6 Z" fill="#c0392b" opacity="0.8"/><line x1="12" y1="12" x2="12" y2="21" stroke="#8a94a3" stroke-width="1.4"/></svg>
-    <div><div class="eyebrow">Wind resource screening</div><h1>Turbine Yield Estimator — Manual</h1></div>
+    <div><div class="eyebrow">Wind farm yield screening &middot; Rowan Goffin</div><h1>Windypins — Manual</h1></div>
   </div>
   <div class="header-actions">
     <a href="index.html" class="backlink">← Back to the tool</a>
@@ -103,6 +103,7 @@
 <nav class="toc" id="tocNav">
 <a href="#1-scope">1. Scope</a>
 <a href="#2-wind-data-sources">2. Wind data sources</a>
+<a href="#2a-era5-statistics" class="toc-h3">2a. ERA5 statistics</a>
 <a href="#3-wind-shear">3. Wind shear</a>
 <a href="#3a-weibull-k-estimation-nasa-power-fallback-path">3a. Weibull k estimation (NASA POWER fallback path)</a>
 <a href="#3b-air-density-correction">3b. Air density correction</a>
@@ -114,6 +115,7 @@
 <a href="#fixed-parameters-and-residual-simplifications" class="toc-h3">Fixed parameters and residual simplifications</a>
 <a href="#5-wind-rose-and-roughness">5. Wind rose and roughness</a>
 <a href="#6-loss-assumptions">6. Loss assumptions</a>
+<a href="#6a-computed-loss-inputs" class="toc-h3">Computed inputs (icing, hysteresis)</a>
 <a href="#blockage-effect" class="toc-h3">Blockage effect</a>
 <a href="#uncertainty-and-exceedance-p50p75p90p99" class="toc-h3">Uncertainty and exceedance (P50/P75/P90/P99)</a>
 <a href="#7-offshore-applicability">7. Offshore applicability</a>
@@ -131,7 +133,7 @@
 <a href="#16-roadmap">16. Roadmap</a>
 </nav>
 <article>
-<h1 id="turbine-yield-estimator-manual"><a class="headline-anchor" href="#turbine-yield-estimator-manual">Turbine Yield Estimator — Manual</a></h1>
+<h1 id="turbine-yield-estimator-manual"><a class="headline-anchor" href="#turbine-yield-estimator-manual">Windypins — Manual</a></h1>
 <p>This manual describes the data sources, formulas, and approximations used to calculate annual energy production (AEP), section by section.</p>
 <hr />
 <h2 id="1-scope"><a class="headline-anchor" href="#1-scope">1. Scope</a></h2>
@@ -150,7 +152,17 @@
 <li><strong>Selecting the vertical level closest to hub height</strong> — NASA POWER publishes wind at 2m, 10m, and 50m, not at hub height directly, so an extrapolation is needed (§3).</li>
 <li><strong>Aggregating to an annual climatological mean</strong> from the twelve monthly values NASA POWER's climatology endpoint returns.</li>
 </ol>
-<p>NASA POWER is used specifically because it requires no API key or registration and returns a REST response in a single call. Higher-resolution alternatives (e.g. ERA5 via the Copernicus Climate Data Store) are discussed as a roadmap item (§16).</p>
+<p>NASA POWER is used specifically because it requires no API key or registration and returns a REST response in a single call.</p>
+<h3 id="2a-era5-statistics"><a class="headline-anchor" href="#2a-era5-statistics">2a. ERA5 hourly statistics (v12)</a></h3>
+<p>A third source, <strong>ERA5</strong> (ECMWF reanalysis, ~31 km, hourly, accessed via the Open-Meteo archive API without registration), supplies long-term temporal statistics once a site centre is set. It is <strong>not</strong> used as the wind resource baseline. This was tested directly: fitting Weibull parameters to 20 years of hourly ERA5 100 m wind and running them through the yield pipeline reproduced London Array's implied wind speed to within roughly +9%, but came out ~16% low at Braes of Doune — a 400 m upland site whose ridge the ~31 km cell averages together with the surrounding valleys. Terrain smoothing of that magnitude, cubed through a power curve, is disqualifying for onshore resource estimation, so GWA remains the resource path (§5).</p>
+<p>ERA5 is instead used for three quantities where synoptic-scale data is appropriate or where hourly chronology is essential:</p>
+<ul>
+<li><strong>Interannual variability</strong> (§10) — per-year annual means from the hourly record; IAV is a regional quantity, so grid resolution is not a limitation here.</li>
+<li><strong>Icing screening</strong> (§6) — the fraction of hours with hub-height temperature below 0&deg;C coincident with relative humidity above 96%, a criterion that monthly climatology cannot resolve.</li>
+<li><strong>High-wind hysteresis</strong> (§6) — counting post-cut-out deadband hours requires the chronological sequence of the wind record, not its distribution; a Weibull fit cannot produce it by construction.</li>
+</ul>
+<p>Weibull parameters reported by the ERA5 endpoint are fitted by maximum likelihood to the hourly sample, excluding calms below 0.5 m/s (the log-likelihood is undefined at zero, and such hours are below every cut-in speed in the library). The exclusion biases the fit slightly high: ~+0.5% on A and ~+1.5% on k at k&nbsp;=&nbsp;2, growing at lower k (~+2%/+4% at k&nbsp;=&nbsp;1.7). These fields are retained for diagnostics and comparison against GWA, not used in the production pipeline.</p>
+<p>Hub-height temperature for the icing criterion is estimated from ERA5's 2 m temperature with a standard 6.5 K/km environmental lapse rate; relative humidity is taken at 2 m without correction, which under-counts icing hours slightly (RH generally increases with height in the boundary layer), making the criterion conservative.</p>
 <hr />
 <h2 id="3-wind-shear"><a class="headline-anchor" href="#3-wind-shear">3. Wind shear</a></h2>
 <p>Wind speed increases with height. Two standard extrapolation methods are available (Shearing tab), both applying to the NASA POWER fallback path only — once a site centre is set, the GWA wind-rose data is already height-interpolated server-side and neither method is applied on top of it.</p>
@@ -219,10 +231,16 @@ C(x)    = 1 − √(1 − Ct / (8(σ/D₀)²))
 <p>Note that the GWC lookup is a <strong>point query</strong> at the site-centre coordinates: it returns the generalized climate at that location, not an area summary. It therefore does not inherit the selection bias of area statistics such as "value for the windiest fraction of the area" reported by some atlas interfaces. The usual location-sensitivity caveat still applies — at GWA's ~250 m effective resolution, a query point on a locally favourable pixel (a knoll, a ridge crest) yields locally favourable statistics — so the site centre should be placed representatively within the site rather than on its windiest corner.</p>
 <hr />
 <h2 id="6-loss-assumptions"><a class="headline-anchor" href="#6-loss-assumptions">6. Loss assumptions</a></h2>
-<p>Default loss categories (Losses tab) follow typical onshore EYA conventions (DNV / IEC 61400-15-adjacent): wake, blockage, turbine availability, balance-of-plant/grid availability, electrical, turbine performance, temperature shutdown, icing, degradation, curtailment, other. Losses are applied multiplicatively, in sequence, to whatever energy remains after prior stages — standard EYA practice, avoiding double-counting. The Results tab and Per-turbine results tab both show this as an explicit waterfall (loss %, MWh impact, remaining yield per stage).</p>
-<p>These are generic defaults, not project-specific figures. Production numbers should come from O&amp;M contracts (availability), grid connection agreements (curtailment), and environmental surveys (icing, degradation) for a given project.</p>
+<p>As of v12, loss categories follow the <strong>IEC 61400-15-2 loss framework</strong>: six top-level categories (wake effect, availability, electrical, turbine performance, environmental, curtailment) plus an "other" line. The 1a/1b/&hellip; numbering used in the interface is this tool's presentation of that taxonomy, not an official IEC clause numbering. Sub-items a screening user rarely adjusts (parasitic consumption, site-specific power-curve adjustment, long-term degradation, operational-strategy curtailment) are collapsed behind an Advanced disclosure per category; a collapsed field's value is always applied, and the disclosure opens automatically whenever its value differs from the default, so nothing is hidden while active.</p>
+<p>Losses are applied multiplicatively, in sequence, to whatever energy remains after prior stages — standard EYA practice, avoiding double-counting. The Results tab and Per-turbine results tab both show this as an explicit waterfall (loss %, MWh impact, remaining yield per stage).</p>
+<p>Defaults are DNV-typical onshore values. They are generic, not project-specific: production numbers should come from O&amp;M contracts (availability), grid connection agreements (curtailment), and environmental surveys (icing, degradation) for a given project. The default set retains the pre-v12 multiplicative total to within ~0.3 percentage points; the difference is the addition of parasitic consumption (3c, 0.1%) and blade soiling / leading-edge erosion (5b, 0.2%) as explicit small defaults.</p>
+<p><strong>Save-file compatibility.</strong> Site files written before v12 carry only the old category keys. On load, sub-items introduced in v12 are zeroed before the saved values are applied, so a pre-v12 file reproduces its original waterfall total exactly rather than silently gaining the new defaults on top. Files saved from v12 onward carry a schema marker (<code>lossSchema: 2</code>) and restore all fields directly.</p>
+<h3 id="6a-computed-loss-inputs"><a class="headline-anchor" href="#6a-computed-loss-inputs">Computed decision-support values (icing, hysteresis)</a></h3>
+<p>Two environmental/performance entries are supported by values computed from the ERA5 hourly record (§2a) once a site centre is set. In both cases the computed figure informs the user-entered loss; it never overwrites it.</p>
+<p><strong>Icing (5a/5c).</strong> The interface reports the fraction of the 20-year record with estimated hub-height temperature below 0&deg;C coincident with RH &gt; 96%, against the 1%-of-hours screening threshold used in the cold-climate literature (after IEA Wind Task 19 practice) as a trigger for icing uncertainty quantification. The tool deliberately does not convert this to an ice class or a loss percentage: published validation work cautions against mechanical use of the class-to-loss translation, and the mapping from icing hours to AEP loss depends on rotor technology, blade heating, and shutdown strategy. The screen answers "does icing need attention at this site" — the loss values remain the user's judgement. As a live cross-check, the criterion returns 0.002% of hours at London Array (Thames Estuary) and 1.69% — above threshold — at Braes of Doune (upland Stirlingshire), matching physical expectation.</p>
+<p><strong>High-wind hysteresis (4b).</strong> After a cut-out trip, control systems hold the turbine offline until wind falls to a restart threshold typically 3&ndash;5 m/s below cut-out; hours spent inside that deadband following a trip are in-limits but non-producing. This is computed by walking the chronological ERA5 hourly series with a two-state machine (producing / tripped), counting in-limits hours lost to the deadband. Deadband wind speeds are above rated for every turbine in the library, so lost energy is rated power &times; lost hours, expressed against AEP at the fleet's current net capacity factor. <strong>Validity is offshore/flat terrain only:</strong> ERA5's ~31 km cell smooths the terrain-accelerated gusts that trip cut-out in complex terrain — at Braes of Doune the record contains zero hours above 25 m/s, which is a resolution artefact, not a site property. For windy onshore sites the interface directs the user to the industry-typical 0.1&ndash;0.5% band instead. At London Array the computed value is ~0.07% of AEP (50 deadband hours in 20 years), slightly below that band, consistent with ERA5 under-resolving the extreme tail even offshore.</p>
 <h3 id="blockage-effect"><a class="headline-anchor" href="#blockage-effect">Blockage effect</a></h3>
-<p>Wake models, including the Jensen model used here, historically did not account for turbines slowing the wind upstream of themselves and the array as a whole. DNV GL's 2018 analysis (Bleeg et al., <em>Energies</em> 11, 1609) identified this as a source of systematic AEP overestimation across the industry; DNV's figures put the previously unaccounted blockage loss at 0–4% of AEP depending on layout and turbine characteristics.</p>
+<p>Wake models — including the Bastankhah&ndash;Port&eacute;-Agel Gaussian model used here (§4), and the Jensen model before it — historically did not account for turbines slowing the wind upstream of themselves and the array as a whole. DNV GL's 2018 analysis (Bleeg et al., <em>Energies</em> 11, 1609) identified this as a source of systematic AEP overestimation across the industry; DNV's figures put the previously unaccounted blockage loss at 0–4% of AEP depending on layout and turbine characteristics.</p>
 <p>Blockage is included here as an explicit, editable loss category (default 2%), not a physically modelled induction-zone calculation — that requires a full flow solver or an analytical vortex model (e.g. Branlard &amp; Meyer Forsting 2020). The default should be scaled up for denser/larger arrays and toward 0% for an isolated turbine.</p>
 <h3 id="uncertainty-and-exceedance-p50p75p90p99"><a class="headline-anchor" href="#uncertainty-and-exceedance-p50p75p90p99">Uncertainty and exceedance (P50/P75/P90/P99)</a></h3>
 <p>A full EYA reports uncertainty across wind resource, wake model, power curve, and interannual variability as component contributions to an overall figure, then derives P50/P75/P90 exceedance values from it. This tool uses a simplified version: a single, user-editable overall uncertainty (%, default 12%, combining rough component estimates of wind resource ~10%, wake model ~5%, and power curve ~3% via root-sum-square), applied to net AEP under a normal-distribution assumption to derive P75/P90/P99. This is a standard simplified method for expressing overall uncertainty as exceedance values, not a substitute for a project-specific, component-by-component uncertainty budget.</p>
@@ -447,6 +465,15 @@ C(x)    = 1 − √(1 − Ct / (8(σ/D₀)²))
 <p>Residual (small, legitimate) sources of run-to-run variation: upstream data providers occasionally update their datasets (NASA POWER climatology revisions, GWA version updates, Open-Elevation source changes), so results may shift slightly across months. Within a session and across save/reload cycles against unchanged upstream data, results are deterministic.</p>
 <h2 id="15-change-log"><a class="headline-anchor" href="#15-change-log">15. Change log</a></h2>
 <p>Technical summary of substantive changes, most recent first. UI-only tweaks omitted.</p>
+<p><strong>v12.0</strong>
+- Renamed Windypins; author byline added.
+- Loss waterfall restructured to the IEC 61400-15-2 framework: six numbered categories with sub-items (1a&ndash;7), rarely-adjusted sub-items behind per-category Advanced disclosures that auto-open when edited, and exact backward compatibility for pre-v12 save files via a schema marker (§6).
+- ERA5 hourly statistics added (Open-Meteo archive route — no registration, no CDS queue): per-site interannual variability from 20 years of annual means, an IEA-Task-19-style icing screening criterion, and a chronological high-wind hysteresis count, offshore-valid only (§2a, §6a). NASA POWER monthly IAV retained as automatic fallback.
+- ERA5 explicitly rejected as a resource baseline after two-farm validation (+9% London Array, &minus;16% Braes of Doune on implied wind speed — terrain smoothing at ~31 km); GWA remains the resource path, with the division of labour documented (§2a).
+- External-wake lookup endpoint added (OpenStreetMap Overpass): neighbouring turbines within a configurable radius with rotor/hub tags where mapped, verified to return London Array's full 175-turbine layout plus Gunfleet Sands from a mid-array query. Frontend integration into the wake model is the next change; until then external wake is the manual 1b entry.
+- Falsy-zero roughness bug fixed (again) with an explicit finite-number check: the water class (z0 = 0) was being replaced by the farmland default in the shear-settings and fallback-wake paths and misreported in report headers. Offshore wake growth was unaffected (the offshore toggle overrides z0 independently).
+- IAV source attribution corrected: report text previously described the NASA POWER grid regardless of which source supplied the series; it now reports the actual source (ERA5 ~31 km hourly or NASA POWER ~50 km monthly).
+- Mobile layout: paired action buttons kept side-by-side; map placement prompt shown until the first turbine exists.</p>
 <p><strong>v11.0</strong>
 - Fixed backend elevation-cache key collision (2-dp → 4-dp coordinates) that let nearby turbines swap terrain data between reloads (§14).
 - Wake model replaced: Jensen top-hat with hard sector binning → Bastankhah–Porté-Agel Gaussian profile with continuous per-sector geometry (5 sub-bearings per sector), turbulence-derived wake growth (k* from roughness via TI), root-sum-square multi-wake combination, and vertical offset for mixed hub heights (§4). Micrositing now changes wake loss smoothly, and interior turbines in large arrays feel all upstream rows.
@@ -475,12 +502,10 @@ C(x)    = 1 − √(1 − Ct / (8(σ/D₀)²))
 - Initial NASA POWER climatology pipeline, Weibull integration, omnidirectional Jensen wake, DNV/IEC-style multiplicative loss waterfall, P50–P99 exceedance, save/load site files, Netlify/Render deployment.</p>
 <h2 id="16-roadmap"><a class="headline-anchor" href="#16-roadmap">16. Roadmap</a></h2>
 <ul>
-<li>Replace NASA POWER with ERA5 (via Copernicus CDS) for higher resolution and multi-height shear data independent of site centre.</li>
+<li><strong>Next:</strong> external wake computed through the wake model from the OSM neighbour lookup (self-filtering the user's own layout, defaulting untagged geometry, rendering neighbours on the map for human verification), and an analytical vortex-cylinder blockage estimate (Branlard &amp; Meyer Forsting closed-form induction) displayed alongside the DNV 0&ndash;4% band as a documented lower bound — rotor induction only, excluding global/atmospheric blockage.</li>
 <li>Direction-dependent (sectoral) roughness rose in place of a single global value.</li>
 <li>Wake-added turbulence for deep-array effects; manufacturer thrust curves in place of the analytic Ct(v) roll-off.</li>
-<li>A physically modelled blockage/induction-zone calculation in place of the flat placeholder.</li>
-<li>Digitized manufacturer power curves in place of the Cp-based approximation in §13a.</li>
-<li>PDF/print-formatted report export.</li>
+<li>Digitized manufacturer power curves in place of the Cp-based approximation in §13a. (ERA5 as a resource replacement was on this list; tested and rejected — see §2a.)</li>
 </ul>
 </article>
 </main>
