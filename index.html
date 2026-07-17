@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Screening-level wind turbine energy yield estimator — reanalysis wind data, Weibull power-curve integration, direction-weighted wake modelling, and a DNV/IEC-style loss waterfall.">
-<title>Turbine Yield Estimator</title>
+<title>Windypins — Wind Farm Yield Screening</title>
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1.6" fill="%23b5650d"/><path d="M12 12 L12 3.5 C15 3.5 16.5 6 15.2 8.8 Z" fill="%23b5650d"/><path d="M12 12 L19.5 15.5 C18.3 18.2 15.2 19 13.2 16.8 Z" fill="%230e7f92"/><path d="M12 12 L6 17 C4 14.7 4.8 11.4 7.8 10.6 Z" fill="%23c0392b"/><line x1="12" y1="12" x2="12" y2="21" stroke="%238a94a3" stroke-width="1.4"/></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -165,6 +165,13 @@
   .tab-panels::-webkit-scrollbar { width: 8px; }
   .tab-panels::-webkit-scrollbar-thumb { background: #d6dbe1; border-radius: 4px; }
   .tab-panels::-webkit-scrollbar-track { background: transparent; }
+  #mapClickPrompt {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    z-index: 800; pointer-events: none;
+    background: rgba(16,21,27,0.82); color: #e8edf2;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.03em;
+    padding: 8px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.18);
+  }
   @media (max-width: 880px){
     body { overflow: auto; height: auto; }
     .app { display: flex; flex-direction: column; height: auto; }
@@ -179,6 +186,9 @@
 
     /* Fields: 2-3 column grids get cramped on phone widths, stack instead */
     .field-row, .field-row.three { grid-template-columns: 1fr; }
+    /* Paired action buttons stay side-by-side on mobile: two half-width
+       buttons beat two full-width rows for thumb reach and screen space. */
+    .field-row:has(> .btn) { grid-template-columns: 1fr 1fr; }
     #bulkApplyCard .field-row { grid-template-columns: 1fr; }
 
     /* Larger touch targets */
@@ -213,7 +223,8 @@
         </svg>
         <div>
           <div class="eyebrow">Wind resource screening</div>
-          <h1 style="margin:2px 0 0;">Turbine Yield Estimator</h1>
+          <h1 style="margin:2px 0 0;">Windypins</h1>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:1px;">Wind farm yield screening &middot; Rowan Goffin</div>
         </div>
       </div>
       <div id="dataSourceBadge" style="margin-top:8px;"><span class="data-source idle"><span class="dot"></span>No turbines sited yet</span></div>
@@ -275,7 +286,7 @@
             </div>
           </details>
         </div>
-        <div class="version-line">v11.0 · July 2026 · screening tool — not a bankable assessment</div>
+        <div class="version-line">Windypins v12.0 · July 2026 · Rowan Goffin · screening tool — not a bankable assessment</div>
       </div>
 
       <!-- SITING -->
@@ -406,40 +417,69 @@
       <div class="tab-panel" id="tab-losses">
         <div class="section">
           <h2>Loss assumptions <a href="manual.html#6-loss-assumptions" target="_blank" rel="noopener" class="theory-link" style="margin-left:6px;">manual</a></h2>
-          <p class="desc">DNV / IEC 61400-15 typical onshore defaults. Applied multiplicatively on top of calculated wake loss.</p>
+          <p class="desc">Categories follow the IEC 61400-15-2 loss framework (numbering is this tool's presentation of that taxonomy). Defaults are DNV-typical onshore values. Applied multiplicatively on top of calculated wake loss. Advanced sub-items are collapsed where a screening user rarely needs them.</p>
 
           <div class="loss-group">
-            <h3>Turbine interaction <a href="manual.html#blockage-effect" target="_blank" rel="noopener" class="theory-link">manual</a></h3>
-            <div class="loss-row"><label>Blockage effect (induction zone)</label><div class="unit-input"><input type="text" data-loss="blockage" value="2.0"><span class="pct-sign">%</span></div></div>
-            <div class="hint" id="blockageHint" style="margin-top:0;">DNV documented range: 0-4% of AEP. Literature-informed placeholder, not physically modelled.</div>
+            <h3>1 &middot; Wake effect <a href="manual.html#4-wake-model" target="_blank" rel="noopener" class="theory-link">manual</a></h3>
+            <div class="loss-row"><label>1a &middot; Internal wake</label><span style="font-family:var(--mono);font-size:11px;color:var(--text-dim);">calculated</span></div>
+            <div class="loss-row"><label>1b &middot; External wake (neighbouring farms)</label><div class="unit-input"><input type="text" data-loss="extWake" data-default="0.0" value="0.0"><span class="pct-sign">%</span></div></div>
+            <div class="hint" style="margin-top:0;">Wakes from farms outside this layout. 1&ndash;3% is common near existing UK clusters; 0 if isolated. Automated OSM-based estimation is planned; until then enter manually.</div>
+            <div class="loss-row"><label>1c &middot; Blockage (induction zone)</label><div class="unit-input"><input type="text" data-loss="blockage" data-default="2.0" value="2.0"><span class="pct-sign">%</span></div></div>
+            <div class="hint" id="blockageHint" style="margin-top:0;">DNV documented range: 0&ndash;4% of AEP. Literature-informed placeholder, not physically modelled.</div>
           </div>
 
           <div class="loss-group">
-            <h3>Availability <a href="manual.html#6-loss-assumptions" target="_blank" rel="noopener" class="theory-link">manual</a></h3>
-            <div class="loss-row"><label>Turbine availability</label><div class="unit-input"><input type="text" data-loss="turbineAvailability" value="3.0"><span class="pct-sign">%</span></div></div>
-            <div class="loss-row"><label>BoP / grid availability</label><div class="unit-input"><input type="text" data-loss="bopAvailability" value="0.5"><span class="pct-sign">%</span></div></div>
+            <h3>2 &middot; Availability <a href="manual.html#6-loss-assumptions" target="_blank" rel="noopener" class="theory-link">manual</a></h3>
+            <div class="loss-row"><label>2a &middot; Turbine availability</label><div class="unit-input"><input type="text" data-loss="turbineAvailability" data-default="3.0" value="3.0"><span class="pct-sign">%</span></div></div>
+            <div class="loss-row"><label>2b &middot; Balance of plant</label><div class="unit-input"><input type="text" data-loss="bopAvailability" data-default="0.3" value="0.3"><span class="pct-sign">%</span></div></div>
+            <div class="loss-row"><label>2c &middot; Grid availability</label><div class="unit-input"><input type="text" data-loss="gridAvailability" data-default="0.2" value="0.2"><span class="pct-sign">%</span></div></div>
           </div>
+
           <div class="loss-group">
-            <h3>Electrical <a href="manual.html#6-loss-assumptions" target="_blank" rel="noopener" class="theory-link">manual</a></h3>
-            <div class="loss-row"><label>Array cabling + transformer</label><div class="unit-input"><input type="text" data-loss="electrical" value="1.5"><span class="pct-sign">%</span></div></div>
+            <h3>3 &middot; Electrical <a href="manual.html#6-loss-assumptions" target="_blank" rel="noopener" class="theory-link">manual</a></h3>
+            <div class="loss-row"><label>3a &middot; Collection system (array)</label><div class="unit-input"><input type="text" data-loss="electrical" data-default="1.5" value="1.5"><span class="pct-sign">%</span></div></div>
+            <div class="loss-row"><label>3b &middot; Export cable / substation</label><div class="unit-input"><input type="text" data-loss="exportCable" data-default="0.0" value="0.0"><span class="pct-sign">%</span></div></div>
+            <div class="hint" style="margin-top:0;">Long offshore export runs commonly add 1&ndash;2% on their own.</div>
+            <details class="advanced"><summary>Advanced</summary><div class="advanced-body">
+              <div class="loss-row"><label>3c &middot; Facility parasitic consumption</label><div class="unit-input"><input type="text" data-loss="parasitic" data-default="0.1" value="0.1"><span class="pct-sign">%</span></div></div>
+            </div></details>
           </div>
+
           <div class="loss-group">
-            <h3>Turbine performance <a href="manual.html#6-loss-assumptions" target="_blank" rel="noopener" class="theory-link">manual</a></h3>
-            <div class="loss-row"><label>Power curve performance</label><div class="unit-input"><input type="text" data-loss="turbinePerformance" value="1.0"><span class="pct-sign">%</span></div></div>
-            <div class="loss-row"><label>High/low temp shutdown</label><div class="unit-input"><input type="text" data-loss="tempShutdown" value="0.4"><span class="pct-sign">%</span></div></div>
+            <h3>4 &middot; Turbine performance <a href="manual.html#6-loss-assumptions" target="_blank" rel="noopener" class="theory-link">manual</a></h3>
+            <div class="loss-row"><label>4a &middot; Sub-optimal / generic power curve</label><div class="unit-input"><input type="text" data-loss="turbinePerformance" data-default="1.0" value="1.0"><span class="pct-sign">%</span></div></div>
+            <div class="loss-row"><label>4b &middot; High-wind hysteresis</label><div class="unit-input"><input type="text" data-loss="hysteresis" data-default="0.0" value="0.0"><span class="pct-sign">%</span></div></div>
+            <div class="hint" id="hysteresisHint" style="margin-top:0;">Restart deadband after cut-out trips. IEC-typical 0.1&ndash;0.5%; higher at windy sites. Set a site centre for an ERA5-derived estimate (offshore/flat sites only).</div>
+            <details class="advanced"><summary>Advanced</summary><div class="advanced-body">
+              <div class="loss-row"><label>4c &middot; Site-specific power curve adjustment</label><div class="unit-input"><input type="text" data-loss="pcAdjust" data-default="0.0" value="0.0"><span class="pct-sign">%</span></div></div>
+            </div></details>
           </div>
+
           <div class="loss-group">
-            <h3>Environmental <a href="manual.html#6-loss-assumptions" target="_blank" rel="noopener" class="theory-link">manual</a></h3>
-            <div class="loss-row"><label>Icing</label><div class="unit-input"><input type="text" data-loss="icing" value="0.8"><span class="pct-sign">%</span></div></div>
-            <div class="loss-row"><label>Long-term degradation</label><div class="unit-input"><input type="text" data-loss="degradation" value="0.4"><span class="pct-sign">%</span></div></div>
+            <h3>5 &middot; Environmental <a href="manual.html#6-loss-assumptions" target="_blank" rel="noopener" class="theory-link">manual</a></h3>
+            <div class="loss-row"><label>5a &middot; Icing &mdash; performance degradation</label><div class="unit-input"><input type="text" data-loss="icing" data-default="0.5" value="0.5"><span class="pct-sign">%</span></div></div>
+            <div class="loss-row"><label>5b &middot; Non-icing degradation (soiling, LE erosion)</label><div class="unit-input"><input type="text" data-loss="soiling" data-default="0.2" value="0.2"><span class="pct-sign">%</span></div></div>
+            <div class="loss-row"><label>5c &middot; Icing &mdash; shutdown</label><div class="unit-input"><input type="text" data-loss="icingShutdown" data-default="0.3" value="0.3"><span class="pct-sign">%</span></div></div>
+            <div class="hint" id="icingHint" style="margin-top:0;">Set a site centre to compute the IEC screening criterion (hub-height T &lt; 0&deg;C with RH &gt; 96% over 1% of hours) from 20 years of ERA5.</div>
+            <div class="loss-row"><label>5d &middot; High/low temperature shutdown</label><div class="unit-input"><input type="text" data-loss="tempShutdown" data-default="0.4" value="0.4"><span class="pct-sign">%</span></div></div>
+            <details class="advanced"><summary>Advanced</summary><div class="advanced-body">
+              <div class="loss-row"><label>5e &middot; Long-term degradation</label><div class="unit-input"><input type="text" data-loss="degradation" data-default="0.4" value="0.4"><span class="pct-sign">%</span></div></div>
+            </div></details>
           </div>
+
           <div class="loss-group">
-            <h3>Curtailment <a href="manual.html#6-loss-assumptions" target="_blank" rel="noopener" class="theory-link">manual</a></h3>
-            <div class="loss-row"><label>Grid / noise / environmental</label><div class="unit-input"><input type="text" data-loss="curtailment" value="1.5"><span class="pct-sign">%</span></div></div>
+            <h3>6 &middot; Curtailment <a href="manual.html#6-loss-assumptions" target="_blank" rel="noopener" class="theory-link">manual</a></h3>
+            <div class="loss-row"><label>6a &middot; Wind sector management</label><div class="unit-input"><input type="text" data-loss="wsm" data-default="0.0" value="0.0"><span class="pct-sign">%</span></div></div>
+            <div class="loss-row"><label>6b &middot; Grid curtailment</label><div class="unit-input"><input type="text" data-loss="curtailment" data-default="1.0" value="1.0"><span class="pct-sign">%</span></div></div>
+            <div class="loss-row"><label>6c &middot; Environmental / permit (noise, shadow, bat)</label><div class="unit-input"><input type="text" data-loss="envCurtailment" data-default="0.5" value="0.5"><span class="pct-sign">%</span></div></div>
+            <details class="advanced"><summary>Advanced</summary><div class="advanced-body">
+              <div class="loss-row"><label>6d &middot; Operational strategies</label><div class="unit-input"><input type="text" data-loss="opsCurtailment" data-default="0.0" value="0.0"><span class="pct-sign">%</span></div></div>
+            </div></details>
           </div>
+
           <div class="loss-group">
-            <h3>Other</h3>
-            <div class="loss-row"><label>Miscellaneous</label><div class="unit-input"><input type="text" data-loss="other" value="1.0"><span class="pct-sign">%</span></div></div>
+            <h3>7 &middot; Other</h3>
+            <div class="loss-row"><label>Miscellaneous</label><div class="unit-input"><input type="text" data-loss="other" data-default="1.0" value="1.0"><span class="pct-sign">%</span></div></div>
           </div>
           <div class="hint">Generic defaults — replace with real O&M, grid, or survey figures once available for a given site.</div>
         </div>
@@ -491,7 +531,7 @@
               <input type="text" id="overallUncertainty" value="12.0">
             </div>
           </div>
-          <div class="hint" id="iavSourceNote" style="margin-top:0;margin-bottom:4px;">IAV: literature default (6% onshore) until site data is fetched.</div>
+          <div class="hint" id="iavSourceNote" style="margin-top:0;margin-bottom:4px;">IAV: literature default (6% onshore) until site data is fetched. With a site centre set, computed from 20 years of ERA5 annual means.</div>
           <div class="hint" id="uncertaintyBreakdown" style="margin-top:0;margin-bottom:10px;">—</div>
           <div class="table-scroll"><table class="results-table">
             <thead><tr><th>Exceedance</th><th>Yield (MWh/yr)</th></tr></thead>
@@ -1019,6 +1059,16 @@ function wireMarkerRemoval(marker, id){
   });
 }
 
+// "Click to place" prompt pinned over the map until the first turbine exists.
+const _mapEl = document.getElementById('map');
+const _placePrompt = document.createElement('div');
+_placePrompt.id = 'mapClickPrompt';
+_placePrompt.textContent = 'Click the map to place turbines';
+_mapEl.appendChild(_placePrompt);
+function updatePlacePrompt(){
+  _placePrompt.style.display = turbines.length === 0 ? 'block' : 'none';
+}
+
 function addTurbine(lat, lng){
   const id = idCounter++;
   const marker = L.circleMarker([lat, lng], { radius: 8, color: '#b5650d', weight: 2, fillColor: '#b5650d', fillOpacity: 0.55 }).addTo(map);
@@ -1058,6 +1108,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
 });
 
 function renderTurbineCards(){
+  updatePlacePrompt();
   const container = document.getElementById('turbineCards');
   const empty = document.getElementById('emptyNote');
   const clearBtn = document.getElementById('clearBtn');
@@ -1644,24 +1695,86 @@ let iavData = null;      // { annualMeans, nYears } once fetched
 let iavFetchedFor = null; // cache key of last fetch to avoid refetch loops
 let iavAuto = true, uncertaintyAuto = true;
 
+let era5Stats = null; // { icing, hysteresis, nYears } from /api/era5-resource
+
 async function fetchIAV(lat, lng){
   const key = `${Math.round(lat * 4) / 4}_${Math.round(lng * 4) / 4}`;
   if (iavFetchedFor === key) return;
   iavFetchedFor = key;
   const base = API_BASE.replace(/\/$/, '');
+
+  // Primary: ERA5 hourly statistics. IAV from real per-year 100 m means,
+  // plus the IEC icing screening criterion and (offshore-valid) hysteresis.
+  // ERA5 is NOT used as the resource baseline — validation showed -16% terrain
+  // smoothing at an upland site; GWA remains the resource path.
+  // First uncached call does 4 chunked 5-year ERA5 fetches server-side: slow.
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25000);
+  const timeout = setTimeout(() => controller.abort(), 75000);
   try {
-    const res = await fetch(`${base}/api/iav?lat=${lat}&lon=${lng}`, { signal: controller.signal });
+    const res = await fetch(`${base}/api/era5-resource?lat=${lat}&lon=${lng}`, { signal: controller.signal });
     clearTimeout(timeout);
-    if (!res.ok) throw new Error('iav endpoint error');
+    if (!res.ok) throw new Error('era5 endpoint error');
     const data = await res.json();
-    iavData = { annualMeans: data.annual_means_50m, nYears: data.n_years };
+    iavData = { annualMeans: data.annual_means_100m, nYears: data.n_years };
+    era5Stats = { icing: data.icing, hysteresis: data.hysteresis, nYears: data.n_years };
+    updateEra5Hints();
   } catch (err) {
     clearTimeout(timeout);
-    iavData = null; // literature fallback will be used
+    era5Stats = null;
+    // Fallback: original NASA POWER monthly-derived IAV.
+    try {
+      const c2 = new AbortController();
+      const t2 = setTimeout(() => c2.abort(), 25000);
+      const res2 = await fetch(`${base}/api/iav?lat=${lat}&lon=${lng}`, { signal: c2.signal });
+      clearTimeout(t2);
+      if (!res2.ok) throw new Error('iav endpoint error');
+      const d2 = await res2.json();
+      iavData = { annualMeans: d2.annual_means_50m, nYears: d2.n_years };
+    } catch (err2) {
+      iavData = null; // literature fallback will be used
+    }
   }
   recalculate();
+}
+
+// Populate the 5a/5c icing hint and the 4b hysteresis hint from ERA5 stats.
+// These inform the user-entered values; they do not overwrite them.
+function updateEra5Hints(){
+  const icingHint = document.getElementById('icingHint');
+  const hystHint = document.getElementById('hysteresisHint');
+  if (!era5Stats) return;
+  const ic = era5Stats.icing;
+  if (icingHint && ic && ic.icing_hours_pct !== undefined){
+    icingHint.innerHTML = ic.criterion_tripped
+      ? `<strong style="color:var(--red);">ERA5 icing screen: ${ic.icing_hours_pct}%</strong> of ${era5Stats.nYears} years of hours have hub-height T &lt; 0&deg;C with RH &gt; 96% — above the 1% IEC threshold. Icing UQ warranted; review 5a/5c against cold-climate references.`
+      : `ERA5 icing screen: ${ic.icing_hours_pct}% of hours have hub-height T &lt; 0&deg;C with RH &gt; 96% (IEC threshold 1%) — icing is unlikely to be material here.`;
+  }
+  const hy = era5Stats.hysteresis;
+  if (hystHint && hy){
+    const offshore = document.getElementById('offshoreToggle').checked;
+    if (!offshore){
+      hystHint.innerHTML = 'ERA5 hysteresis is only valid offshore/flat terrain — its ~31 km cell smooths the gusts that trip cut-out in complex terrain (a validated artefact, not a site property). Use the IEC-typical 0.1&ndash;0.5% band for windy onshore sites.';
+    } else if (hy.lost_hours !== undefined){
+      const lostPerYr = hy.lost_hours / Math.max(1, era5Stats.nYears);
+      // Deadband hours sit above rated for every library turbine, so the lost
+      // energy is rated power x lost hours; expressed against AEP at the
+      // current net CF (falls back to 0.40 before first full calc).
+      const cf = (window._lastNetCF && window._lastNetCF > 0.05) ? window._lastNetCF : 0.40;
+      const pctAEP = 100 * lostPerYr / (8766 * cf);
+      hystHint.innerHTML = `ERA5: ${hy.lost_hours} deadband hours over ${era5Stats.nYears} yrs (${lostPerYr.toFixed(1)} h/yr) &asymp; <strong>${pctAEP.toFixed(2)}% of AEP</strong> at current CF. Enter in 4b if appropriate. Slight underestimate — ERA5 under-resolves the high-wind tail.`;
+    }
+  }
+}
+document.getElementById('offshoreToggle').addEventListener('change', updateEra5Hints);
+
+// Open any Advanced <details> whose input has been edited away from its
+// default, so a loaded or hand-edited value is never hidden.
+function openAdvancedWithEdits(){
+  document.querySelectorAll('.loss-group details.advanced').forEach(det => {
+    const edited = [...det.querySelectorAll('[data-loss]')].some(inp =>
+      parseFloat(inp.value) !== parseFloat(inp.dataset.default || '0'));
+    if (edited) det.open = true;
+  });
 }
 
 // Detrended energy coefficient of variation (%) for the current fleet.
@@ -1767,17 +1880,28 @@ async function recalculate(){
 
   function buildStages(wakePct){
     return [
-      { label: 'Wake effect', pct: wakePct },
-      { label: 'Blockage effect', pct: lossVals.blockage },
-      { label: 'Turbine availability', pct: lossVals.turbineAvailability },
-      { label: 'BoP / grid availability', pct: lossVals.bopAvailability },
-      { label: 'Electrical', pct: lossVals.electrical },
-      { label: 'Turbine performance', pct: lossVals.turbinePerformance },
-      { label: 'Temp shutdown', pct: lossVals.tempShutdown },
-      { label: 'Icing', pct: lossVals.icing },
-      { label: 'Degradation', pct: lossVals.degradation },
-      { label: 'Curtailment', pct: lossVals.curtailment },
-      { label: 'Other', pct: lossVals.other },
+      { label: '1a Internal wake', pct: wakePct },
+      { label: '1b External wake', pct: lossVals.extWake },
+      { label: '1c Blockage', pct: lossVals.blockage },
+      { label: '2a Turbine availability', pct: lossVals.turbineAvailability },
+      { label: '2b Balance of plant', pct: lossVals.bopAvailability },
+      { label: '2c Grid availability', pct: lossVals.gridAvailability },
+      { label: '3a Collection system', pct: lossVals.electrical },
+      { label: '3b Export cable', pct: lossVals.exportCable },
+      { label: '3c Parasitic consumption', pct: lossVals.parasitic },
+      { label: '4a Power curve performance', pct: lossVals.turbinePerformance },
+      { label: '4b High-wind hysteresis', pct: lossVals.hysteresis },
+      { label: '4c Site-specific PC adjustment', pct: lossVals.pcAdjust },
+      { label: '5a Icing — degradation', pct: lossVals.icing },
+      { label: '5b Soiling / LE erosion', pct: lossVals.soiling },
+      { label: '5c Icing — shutdown', pct: lossVals.icingShutdown },
+      { label: '5d Temperature shutdown', pct: lossVals.tempShutdown },
+      { label: '5e Long-term degradation', pct: lossVals.degradation },
+      { label: '6a Wind sector management', pct: lossVals.wsm },
+      { label: '6b Grid curtailment', pct: lossVals.curtailment },
+      { label: '6c Environmental / permit', pct: lossVals.envCurtailment },
+      { label: '6d Operational strategies', pct: lossVals.opsCurtailment },
+      { label: '7 Other', pct: lossVals.other },
       { label: 'Manual adjustment', pct: -manualAdj }
     ];
   }
@@ -1798,6 +1922,10 @@ async function recalculate(){
   const overallWakePct = totalGross > 0 ? (1 - totalWakeAdjusted / totalGross) * 100 : 0;
   const aggregate = runWaterfall(totalGross, overallWakePct);
   const totalNet = aggregate.net;
+  // Net CF exposed for the 4b hysteresis hint (deadband hours are at rated
+  // power, so %AEP depends on the fleet's own CF).
+  window._lastNetCF = totalRatedKW > 0 ? totalNet / (totalRatedKW * 8766) : 0;
+  updateEra5Hints();
   const capFactor = totalRatedKW > 0 ? (totalNet * 1000) / (totalRatedKW * 8760) * 100 : 0;
 
   // Per-turbine waterfalls (exact, not proportionally distributed — same % stages applied to each turbine's own gross)
@@ -2116,6 +2244,7 @@ function generateReportText(){
 function buildSiteState(){
   return {
     savedAt: new Date().toISOString(),
+    lossSchema: 2, // v12: IEC 61400-15-2 numbered taxonomy — new sub-item keys exist
     siteCentre,
     turbines: turbines.map(t => ({ model: t.model, lat: t.lat, lng: t.lng, hubHeight: t.hubHeight, customSpec: t.customSpec, cpMax: t.cpMax })),
     lossVals: getLossInputs(),
@@ -2166,7 +2295,7 @@ async function downloadTextFile(text, filename, mime = 'text/plain'){
 document.getElementById('saveSiteBtn').addEventListener('click', () => {
   const state = buildSiteState();
   const text = [
-    'TURBINE YIELD ESTIMATOR — SITE FILE',
+    'WINDYPINS — SITE FILE',
     `Saved: ${state.savedAt}`,
     '',
     'This is a save file for this tool — use "Load site from file" to restore it.',
@@ -2233,10 +2362,19 @@ document.getElementById('loadSiteInput').addEventListener('change', async (e) =>
     await fetchElevationsQueued(turbines);
 
     if (state.lossVals){
+      // Pre-schema-2 files know nothing of the new sub-items (2c, 3b/3c, 4b/4c,
+      // 5b/5c, 6a/6c/6d). Zero those first so an old file reproduces its old
+      // total exactly, instead of silently gaining the new defaults on top.
+      if (!state.lossSchema || state.lossSchema < 2){
+        ['gridAvailability','exportCable','parasitic','hysteresis','pcAdjust',
+         'soiling','icingShutdown','wsm','envCurtailment','opsCurtailment','extWake']
+          .forEach(k => { const el = document.querySelector(`[data-loss="${k}"]`); if (el) el.value = '0.0'; });
+      }
       Object.entries(state.lossVals).forEach(([key, val]) => {
         const input = document.querySelector(`[data-loss="${key}"]`);
         if (input) input.value = val;
       });
+      openAdvancedWithEdits();
     }
     if (state.manualAdj !== undefined) document.getElementById('manualAdjustment').value = state.manualAdj;
     if (state.uncertaintyPct !== undefined){
