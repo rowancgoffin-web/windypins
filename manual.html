@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual — Turbine Yield Estimator</title>
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1.6" fill="%23b5650d"/><path d="M12 12 L12 3.5 C15 3.5 16.5 6 15.2 8.8 Z" fill="%23b5650d"/><path d="M12 12 L19.5 15.5 C18.3 18.2 15.2 19 13.2 16.8 Z" fill="%230e7f92"/><path d="M12 12 L6 17 C4 14.7 4.8 11.4 7.8 10.6 Z" fill="%23c0392b"/><line x1="12" y1="12" x2="12" y2="21" stroke="%238a94a3" stroke-width="1.4"/></svg>'>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #f3f5f7; --panel: #ffffff; --panel-line: #e2e6eb;
+    --text: #1e2530; --text-dim: #667085;
+    --amber: #b5650d; --cyan: #0e7f92; --red: #c0392b;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --sans: 'IBM Plex Sans', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  .docheader { background: var(--panel); border-bottom: 1px solid var(--panel-line); position: sticky; top: 0; z-index: 20; }
+  .docheader .inner { max-width: 980px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .brand .eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; color: var(--amber); text-transform: uppercase; }
+  .brand h1 { font-size: 15px; margin: 2px 0 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .backlink { font-family: var(--mono); font-size: 11px; color: var(--cyan); text-decoration: none; border: 1px solid #d6dbe1; border-radius: 5px; padding: 7px 12px; white-space: nowrap; }
+  .backlink:hover { border-color: var(--cyan); }
+
+  .menu-toggle { display: none; align-items: center; justify-content: center; width: 36px; height: 36px; border: 1px solid #d6dbe1; border-radius: 6px; background: var(--panel); cursor: pointer; flex-shrink: 0; }
+  .menu-toggle span, .menu-toggle span::before, .menu-toggle span::after { display: block; width: 16px; height: 2px; background: var(--text); position: relative; transition: transform 0.15s, opacity 0.15s; }
+  .menu-toggle span::before { content: ''; position: absolute; top: -5px; width: 16px; height: 2px; background: var(--text); }
+  .menu-toggle span::after { content: ''; position: absolute; top: 5px; width: 16px; height: 2px; background: var(--text); }
+
+  .layout { max-width: 980px; margin: 0 auto; padding: 28px 20px 60px; display: grid; grid-template-columns: 230px 1fr; gap: 28px; align-items: start; }
+  nav.toc { position: sticky; top: 70px; background: var(--panel); border: 1px solid var(--panel-line); border-radius: 8px; padding: 16px; font-size: 12px; max-height: calc(100vh - 100px); overflow-y: auto; }
+  nav.toc a { display: block; color: var(--text-dim); text-decoration: none; padding: 4px 0; line-height: 1.4; }
+  nav.toc a.toc-h3 { padding-left: 12px; font-size: 11.5px; }
+  nav.toc a:hover { color: var(--cyan); }
+  article { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 8px; padding: 34px 40px 44px; box-shadow: 0 1px 2px rgba(30,37,48,0.06), 0 2px 8px rgba(30,37,48,0.06); min-width: 0; }
+  article h1 { font-size: 24px; letter-spacing: -0.01em; margin: 0 0 6px; }
+  article > p:first-of-type { color: var(--text-dim); font-size: 13px; margin-bottom: 28px; }
+  article h2 { font-size: 17px; margin: 30px 0 10px; padding-top: 16px; border-top: 1px solid var(--panel-line); scroll-margin-top: 76px; }
+  article h3 { font-size: 14px; margin: 20px 0 8px; color: var(--cyan); scroll-margin-top: 76px; }
+  article p, article li { font-size: 13.5px; line-height: 1.7; color: #313a47; }
+  article a { color: var(--cyan); }
+  article code { font-family: var(--mono); font-size: 12px; background: #f1f3f5; border: 1px solid var(--panel-line); border-radius: 4px; padding: 1px 5px; }
+  article pre { background: #f8f9fb; border: 1px solid var(--panel-line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; }
+  article pre code { background: none; border: none; padding: 0; font-size: 12.5px; }
+  article table { border-collapse: collapse; width: 100%; font-size: 12.5px; margin: 14px 0; display: block; overflow-x: auto; }
+  article th { text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-dim); padding: 8px; border-bottom: 1px solid var(--panel-line); }
+  article td { padding: 8px; border-bottom: 1px solid #edf0f3; vertical-align: top; }
+  article blockquote { margin: 14px 0; padding: 10px 16px; border-left: 3px solid var(--amber); background: #fbf7f2; color: var(--text-dim); }
+  article hr { border: none; border-top: 1px solid var(--panel-line); margin: 26px 0; }
+  article strong { color: var(--text); }
+  .headline-anchor { text-decoration: none; color: inherit; }
+  .headline-anchor:hover::after { content: ' #'; color: var(--text-dim); font-size: 0.8em; }
+  footer { max-width: 980px; margin: 0 auto; padding: 0 20px 40px; font-family: var(--mono); font-size: 10.5px; color: var(--text-dim); }
+
+  .nav-backdrop { display: none; }
+
+  @media (max-width: 800px) {
+    .layout { grid-template-columns: 1fr; padding: 16px 12px 40px; }
+    article { padding: 22px 18px 30px; }
+    article h1 { font-size: 20px; }
+    article h2 { font-size: 15.5px; }
+    article table { font-size: 11.5px; }
+    .docheader .inner { padding: 12px 14px; }
+    .brand h1 { font-size: 13px; }
+    .menu-toggle { display: flex; }
+
+    nav.toc {
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 30;
+      width: 78vw; max-width: 300px; max-height: none;
+      border-radius: 0; border: none; border-right: 1px solid var(--panel-line);
+      transform: translateX(-100%); transition: transform 0.2s ease;
+      padding: 16px 16px 24px; padding-top: 70px;
+    }
+    nav.toc.open { transform: translateX(0); }
+    nav.toc a { padding: 7px 0; font-size: 13px; }
+    nav.toc a.toc-h3 { font-size: 12px; }
+
+    .nav-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(20,24,30,0.4); z-index: 25;
+    }
+    .nav-backdrop.open { display: block; }
+  }
+</style>
+</head>
+<body>
+<div class="docheader"><div class="inner">
+  <div class="brand">
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle contents menu"><span></span></button>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><circle cx="12" cy="12" r="1.6" fill="#b5650d"/><path d="M12 12 L12 3.5 C15 3.5 16.5 6 15.2 8.8 Z" fill="#b5650d" opacity="0.8"/><path d="M12 12 L19.5 15.5 C18.3 18.2 15.2 19 13.2 16.8 Z" fill="#0e7f92" opacity="0.8"/><path d="M12 12 L6 17 C4 14.7 4.8 11.4 7.8 10.6 Z" fill="#c0392b" opacity="0.8"/><line x1="12" y1="12" x2="12" y2="21" stroke="#8a94a3" stroke-width="1.4"/></svg>
+    <div><div class="eyebrow">Wind resource screening</div><h1>Turbine Yield Estimator — Manual</h1></div>
+  </div>
+  <div class="header-actions">
+    <a href="index.html" class="backlink">← Back to the tool</a>
+  </div>
+</div></div>
+<div class="nav-backdrop" id="navBackdrop"></div>
+<main class="layout">
+<nav class="toc" id="tocNav">
+<a href="#1-scope">1. Scope</a>
+<a href="#2-wind-data-sources">2. Wind data sources</a>
+<a href="#3-wind-shear">3. Wind shear</a>
+<a href="#3a-weibull-k-estimation-nasa-power-fallback-path">3a. Weibull k estimation (NASA POWER fallback path)</a>
+<a href="#3b-air-density-correction">3b. Air density correction</a>
+<a href="#4-wake-model">4. Wake model</a>
+<a href="#velocity-deficit" class="toc-h3">Velocity deficit</a>
+<a href="#wake-growth-from-turbulence" class="toc-h3">Wake growth from turbulence</a>
+<a href="#direction-handling" class="toc-h3">Direction handling</a>
+<a href="#multi-wake-combination" class="toc-h3">Multi-wake combination</a>
+<a href="#fixed-parameters-and-residual-simplifications" class="toc-h3">Fixed parameters and residual simplifications</a>
+<a href="#5-wind-rose-and-roughness">5. Wind rose and roughness</a>
+<a href="#6-loss-assumptions">6. Loss assumptions</a>
+<a href="#blockage-effect" class="toc-h3">Blockage effect</a>
+<a href="#uncertainty-and-exceedance-p50p75p90p99" class="toc-h3">Uncertainty and exceedance (P50/P75/P90/P99)</a>
+<a href="#7-offshore-applicability">7. Offshore applicability</a>
+<a href="#8-known-limitations">8. Known limitations</a>
+<a href="#9-energy-integration-mathematics">9. Energy integration mathematics</a>
+<a href="#10-uncertainty-and-exceedance-mathematics">10. Uncertainty and exceedance mathematics</a>
+<a href="#component-build-up" class="toc-h3">Component build-up</a>
+<a href="#interannual-variability-iav" class="toc-h3">Interannual variability (IAV)</a>
+<a href="#11-terrain-speed-up-correction">11. Terrain speed-up correction</a>
+<a href="#12-terrain-complexity-flag">12. Terrain complexity flag</a>
+<a href="#13-turbine-library">13. Turbine library</a>
+<a href="#13a-power-curve-model">13a. Power curve model</a>
+<a href="#14-reproducibility">14. Reproducibility</a>
+<a href="#15-change-log">15. Change log</a>
+<a href="#16-roadmap">16. Roadmap</a>
+</nav>
+<article>
+<h1 id="turbine-yield-estimator-manual"><a class="headline-anchor" href="#turbine-yield-estimator-manual">Turbine Yield Estimator — Manual</a></h1>
+<p>This manual describes the data sources, formulas, and approximations used to calculate annual energy production (AEP), section by section.</p>
+<hr />
+<h2 id="1-scope"><a class="headline-anchor" href="#1-scope">1. Scope</a></h2>
+<p>A screening-level energy yield estimator: turbines are placed on a map and an indicative annual energy production is calculated. It is not a bankable assessment — there is no terrain-corrected wind flow model, no measured wind data, and no statistical uncertainty analysis in the sense used by a full Energy Yield Assessment (EYA). Outputs indicate whether a site merits further investigation, not whether it would be financeable.</p>
+<hr />
+<h2 id="2-wind-data-sources"><a class="headline-anchor" href="#2-wind-data-sources">2. Wind data sources</a></h2>
+<p>This tool uses two wind data sources:</p>
+<ul>
+<li><strong>NASA POWER</strong> (climatology fallback, used when no site centre is set): a MERRA-2 reanalysis-derived climatology, accessed via a REST API with no registration required.</li>
+<li><strong>Global Wind Atlas (GWA) generalized wind climate (GWC) files</strong> (used once a site centre is set): sector-wise frequency and Weibull A/k parameters, retrieved via the <code>wind-stats</code> Python library.</li>
+</ul>
+<p>Both are gridded products. MERRA-2 is a reanalysis: observations (satellites, radiosondes, surface stations, ships and buoys) are assimilated into a global atmospheric model to produce wind fields on a regular grid. GWA further downscales reanalysis-scale wind statistics using terrain and roughness models to a finer effective resolution — though the GWC files served here represent the <em>generalized</em> (not site-specific) regional climate; see §5.</p>
+<p>Extracting a value at a specific site from NASA POWER involves:</p>
+<ol>
+<li><strong>Locating the nearest grid cell</strong> (~50 km resolution, 0.5°×0.625°). Nearest-neighbour selection is used; bilinear interpolation across the four surrounding grid points would remove the artificial step discontinuities between cells.</li>
+<li><strong>Selecting the vertical level closest to hub height</strong> — NASA POWER publishes wind at 2m, 10m, and 50m, not at hub height directly, so an extrapolation is needed (§3).</li>
+<li><strong>Aggregating to an annual climatological mean</strong> from the twelve monthly values NASA POWER's climatology endpoint returns.</li>
+</ol>
+<p>NASA POWER is used specifically because it requires no API key or registration and returns a REST response in a single call. Higher-resolution alternatives (e.g. ERA5 via the Copernicus Climate Data Store) are discussed as a roadmap item (§16).</p>
+<hr />
+<h2 id="3-wind-shear"><a class="headline-anchor" href="#3-wind-shear">3. Wind shear</a></h2>
+<p>Wind speed increases with height. Two standard extrapolation methods are available (Shearing tab), both applying to the NASA POWER fallback path only — once a site centre is set, the GWA wind-rose data is already height-interpolated server-side and neither method is applied on top of it.</p>
+<p><strong>Power law</strong> (default):</p>
+<pre><code>V(h) = V(h_ref) × (h / h_ref)^α
+</code></pre>
+<p>α cannot be derived for a specific site without multi-height wind measurements, so a fixed, user-adjustable value is used. Typical values: 0.10–0.12 offshore or flat terrain, 0.14 open onshore, 0.20–0.30+ forested or urban.</p>
+<p><strong>Log law</strong> (alternative, selectable in the Shearing tab):</p>
+<pre><code>V(h) = V(h_ref) × ln(h / z₀) / ln(h_ref / z₀)
+</code></pre>
+<p>z₀ is the surface roughness length (Shearing tab, shared with the GWA sector interpolation — §5). The log law is the standard alternative to the power law and is generally considered more physically grounded near the surface, within the atmospheric boundary layer's log-linear region; the power law is a simpler empirical fit that is easier to parameterise without a measured roughness length. The two methods agree reasonably well over the height ranges typical of onshore wind turbines and diverge more at greater heights or over rougher terrain. z₀ = 0 ("Water") is clamped to 0.0002 m for this calculation, since the log law is undefined at z₀ = 0.</p>
+<p>Both methods extrapolate from the same NASA POWER 50m climatological mean; neither derives a location-specific exponent or roughness length from the reanalysis data itself, and neither captures diurnal or atmospheric-stability effects, which multi-level in-situ measurement does. Deriving α from two reanalysis heights at the same grid cell (e.g. an ERA5 upgrade's 10m and 100m levels) would give a location-varying estimate rather than one number applied everywhere — see §16.</p>
+<p><strong>Measured wind speeds at height (advanced, Shearing tab).</strong> Where measured speeds at two or more heights are available (met mast, LiDAR), the shear exponent can be fitted from them instead of assumed: α is the least-squares slope of ln(v) against ln(h). The fitted value is applied to the power law and shown with the number of points used. This feeds the same fallback-only path as the rest of the tab. Fits outside the physical range (α ≤ 0 or &gt; 1) are rejected rather than applied.</p>
+<p><strong>The roughness field (z₀) does three separate jobs depending on path, worth stating plainly in one place:</strong></p>
+<ol>
+<li><strong>Log-law shear</strong> (this section) — NASA POWER fallback path only.</li>
+<li><strong>GWA sector interpolation</strong> (§5) — the site-specific roughness class GWC data is re-specialized to; GWA path only, and independent of the shear-law setting above (the two paths are mutually exclusive, never both applied).</li>
+<li><strong>Wake turbulence intensity</strong> (§4) — feeds the Gaussian wake's growth rate on the GWA path (TI ≈ 1/ln(h/z₀)); this is a genuinely different physical quantity from (2) using the same field, since turbulence intensity and the GWC roughness-class interpolation are unrelated mechanisms that happen to both depend on z₀.</li>
+</ol>
+<p>One field, three uses, only one or two active depending on which path is running — set it to the roughness that actually matches the site regardless of which path you expect to be active, since it silently matters to whichever one is.</p>
+<hr />
+<h2 id="3a-weibull-k-estimation-nasa-power-fallback-path"><a class="headline-anchor" href="#3a-weibull-k-estimation-nasa-power-fallback-path">3a. Weibull k estimation (NASA POWER fallback path)</a></h2>
+<p>When no site centre is set, the tool uses NASA POWER only and estimates the Weibull shape parameter k per location via the Justus &amp; Mikhail (1976) relation:</p>
+<pre><code>k ≈ (σ / mean)^-1.086
+</code></pre>
+<p>applied to the coefficient of variation of the twelve monthly climatological means (NASA POWER's climatology endpoint does not provide sub-monthly data). This relation is normally applied to the standard deviation of the actual (hourly or sub-daily) wind speed distribution; using monthly-mean variability as a proxy captures the seasonal cycle only, not the larger synoptic and diurnal variability that dominates the true value of k, and tends to bias k high (distribution narrower than reality). The GWA wind-rose path, used once a site centre is set, provides real per-sector k values from GWC data and does not carry this limitation.</p>
+<h2 id="3b-air-density-correction"><a class="headline-anchor" href="#3b-air-density-correction">3b. Air density correction</a></h2>
+<p>Manufacturer power curves are certified at standard sea-level density (1.225 kg/m³, 15°C, ICAO ISA reference). Site elevation is fetched via Open-Elevation and the ISA barometric formula applied:</p>
+<pre><code>ρ(h) = 1.225 × (1 − 2.25577×10⁻⁵ × h)^5.25588
+</code></pre>
+<p>The resulting density ratio scales power curve output. This is an elevation-only approximation; a full IEC 61400-12 treatment would also use site temperature and pressure on the day rather than elevation alone, but elevation-only captures most of the effect above a few hundred metres.</p>
+<hr />
+<h2 id="4-wake-model"><a class="headline-anchor" href="#4-wake-model">4. Wake model</a></h2>
+<p>The wake model is the Gaussian velocity-deficit model of Bastankhah &amp; Porté-Agel (2014) — the profile modern industry tools default to — with turbulence-derived wake growth and root-sum-square multi-wake combination.</p>
+<h3 id="velocity-deficit"><a class="headline-anchor" href="#velocity-deficit">Velocity deficit</a></h3>
+<p>A turbine of rotor diameter D₀ generates a wake whose fractional velocity deficit at downwind distance x, crosswind offset y, and hub-height offset Δz is:</p>
+<pre><code>δ(x, y, Δz) = C(x) · exp(−(y² + Δz²) / 2σ(x)²)
+
+σ(x)/D₀ = k*·x/D₀ + 0.2·√β,    β = ½ (1 + √(1−Ct)) / √(1−Ct)
+C(x)    = 1 − √(1 − Ct / (8(σ/D₀)²))
+</code></pre>
+<p>σ is the Gaussian wake width, growing linearly with distance at rate k*; C is the centreline deficit. Because the profile is Gaussian in crosswind distance, partial waking falls out of the formula directly — a turbine offset from the wake centreline receives a proportionally reduced deficit, with no separate overlap-area geometry needed. The Δz term handles fleets with mixed hub heights. The far-wake formula over-predicts sharply near its validity boundary (x ≲ 1.9D₀ at onshore turbulence), so C is capped at the actuator-disc initial deficit <code>1 − √(1−Ct)</code> — the physically attainable maximum.</p>
+<h3 id="wake-growth-from-turbulence"><a class="headline-anchor" href="#wake-growth-from-turbulence">Wake growth from turbulence</a></h3>
+<p>Wake recovery is driven by atmospheric turbulence, which in the neutral surface layer follows from the surface roughness length: <code>TI ≈ 1/ln(h/z₀)</code>, with h the upstream turbine's hub height. The growth rate then follows the Niayifar &amp; Porté-Agel (2016) empirical relation:</p>
+<pre><code>k* = 0.003678 + 0.3837 · TI
+</code></pre>
+<p>Representative values: onshore (z₀ = 0.03 m, h = 80 m) TI ≈ 12.7%, k<em> ≈ 0.052; open water (z₀ = 0.0002 m, h = 90 m) TI ≈ 7.7%, k</em> ≈ 0.033. Lower offshore turbulence means wakes recover more slowly and persist further downwind. This ties wake behaviour to the roughness the user already sets (§5) rather than a separate hardcoded constant; the "Offshore site" checkbox (Siting tab) forces the open-water roughness in this calculation regardless of the roughness selection. The exported report states the k* and TI used.</p>
+<h3 id="direction-handling"><a class="headline-anchor" href="#direction-handling">Direction handling</a></h3>
+<p>Where a wind rose is available, the calculation runs per sector, and within each sector at five sub-bearings spanning the sector's width. For each sub-bearing, every neighbour's position is decomposed relative to the wind axis into a downwind distance x (neighbours downwind of the subject turbine cannot wake it) and crosswind offset y, and the Gaussian deficit evaluated. Averaging across sub-bearings represents partial-time waking: a wake narrower than a full 30° sector only counts for the fraction of that sector's wind directions it actually covers. Geometry is continuous in both position and bearing — small turbine moves produce small, smooth changes in wake loss.</p>
+<p>Where no rose is available (no site centre set), a deliberately conservative omnidirectional worst case is used: every neighbour is treated as directly upwind on the wake centreline simultaneously.</p>
+<h3 id="multi-wake-combination"><a class="headline-anchor" href="#multi-wake-combination">Multi-wake combination</a></h3>
+<p>Overlapping deficits from multiple upstream turbines combine as the root-sum-square of the individual deficits (Katić et al. 1986), capped at 0.99:</p>
+<pre><code>δ_total = √(Σᵢ δᵢ²)
+</code></pre>
+<p>Interior turbines in a large array therefore feel every upstream row, not only the strongest single wake.</p>
+<h3 id="fixed-parameters-and-residual-simplifications"><a class="headline-anchor" href="#fixed-parameters-and-residual-simplifications">Fixed parameters and residual simplifications</a></h3>
+<ul>
+<li><strong>Thrust coefficient varies with wind speed.</strong> Ct is ~0.8 below rated output (typical for pitch-regulated machines) and rolls off above it as blade pitch sheds load: <code>Ct(v) = 0.8·(v_knee/v)²</code> above the knee (the speed where the power curve reaches ~95% of rated), floored at 0.05 — giving ~0.18 at 25 m/s for a 12 m/s knee, consistent with published curves ending around 0.1–0.15. Rather than integrating the deficit per wind-speed bin, each sector uses an <strong>effective Ct</strong>: the Weibull-weighted mean of Ct(v) over that sector's own wind distribution, computed once per sector per upstream turbine class. Sectors with more high-wind hours therefore produce weaker wakes, correcting the previous constant-Ct overstatement. The no-rose fallback path retains the flat 0.8, consistent with its worst-case philosophy.</li>
+<li>No wake-added turbulence: deep-array effects, where upstream wakes raise TI and accelerate the recovery of downstream wakes, are not modelled.</li>
+<li>No blockage physics — the upstream induction effect remains an explicit loss-waterfall entry (§6), not a flow calculation.</li>
+</ul>
+<hr />
+<h2 id="5-wind-rose-and-roughness"><a class="headline-anchor" href="#5-wind-rose-and-roughness">5. Wind rose and roughness</a></h2>
+<p>A wind rose requires a joint distribution of speed and direction — typically 12 or 16 sectors, each with its own frequency and Weibull A/k. NASA POWER's climatology endpoint returns only a single annual mean and cannot produce one. Once a site centre is set, the rose comes from <strong>Global Wind Atlas GWC files</strong>, which contain sector-wise frequency and Weibull A/k directly, retrievable via the <code>wind-stats</code> Python library. Without a site centre, the rose shown is a deterministic synthetic function of coordinates, labelled "SYNTHETIC" in the widget. (Binning a reanalysis time series by direction would be the alternative rose source, at the cost of substantially more data per point — see §16.)</p>
+<p>GWC data does not describe the wind at the exact query point as-is. It describes the <em>generalized</em> regional wind climate: the wind statistics the region would have if its surface were uniformly one of several standard roughness classes, tabulated at several standard heights. This is the standard input format for microscale modelling (WAsP-style); the downstream tool re-specializes the generalized climate to local conditions by interpolating to the actual hub height and the roughness class matching the site's real surroundings. That interpolation is what the roughness setting (Shearing tab) controls on the GWA path, and it has a <strong>first-order effect on yield</strong>. Physically, for the same regional (geostrophic) driving wind, a rougher surface extracts more momentum from the flow, so hub-height wind is lower over rough terrain than smooth: moving the class from 0.03 m (open farmland) to 0.1 m (scattered obstacles) at a ~70 m hub typically lowers hub-height wind by several percent, and since energy responds roughly cubically in the operating range, gross yield can move 15–20%. Vertical shear is applied exactly once in this path — inside the GWC height/roughness interpolation; the Shearing tab's shear-law setting is not applied on top of it. Pick the roughness class that matches the site's actual surface, and treat the choice with the same seriousness as hub height. The effect is minimal offshore (water is a single class, 0.0 m); onshore it is one of the largest levers in the tool.</p>
+<p>Note that the GWC lookup is a <strong>point query</strong> at the site-centre coordinates: it returns the generalized climate at that location, not an area summary. It therefore does not inherit the selection bias of area statistics such as "value for the windiest fraction of the area" reported by some atlas interfaces. The usual location-sensitivity caveat still applies — at GWA's ~250 m effective resolution, a query point on a locally favourable pixel (a knoll, a ridge crest) yields locally favourable statistics — so the site centre should be placed representatively within the site rather than on its windiest corner.</p>
+<hr />
+<h2 id="6-loss-assumptions"><a class="headline-anchor" href="#6-loss-assumptions">6. Loss assumptions</a></h2>
+<p>Default loss categories (Losses tab) follow typical onshore EYA conventions (DNV / IEC 61400-15-adjacent): wake, blockage, turbine availability, balance-of-plant/grid availability, electrical, turbine performance, temperature shutdown, icing, degradation, curtailment, other. Losses are applied multiplicatively, in sequence, to whatever energy remains after prior stages — standard EYA practice, avoiding double-counting. The Results tab and Per-turbine results tab both show this as an explicit waterfall (loss %, MWh impact, remaining yield per stage).</p>
+<p>These are generic defaults, not project-specific figures. Production numbers should come from O&amp;M contracts (availability), grid connection agreements (curtailment), and environmental surveys (icing, degradation) for a given project.</p>
+<h3 id="blockage-effect"><a class="headline-anchor" href="#blockage-effect">Blockage effect</a></h3>
+<p>Wake models, including the Jensen model used here, historically did not account for turbines slowing the wind upstream of themselves and the array as a whole. DNV GL's 2018 analysis (Bleeg et al., <em>Energies</em> 11, 1609) identified this as a source of systematic AEP overestimation across the industry; DNV's figures put the previously unaccounted blockage loss at 0–4% of AEP depending on layout and turbine characteristics.</p>
+<p>Blockage is included here as an explicit, editable loss category (default 2%), not a physically modelled induction-zone calculation — that requires a full flow solver or an analytical vortex model (e.g. Branlard &amp; Meyer Forsting 2020). The default should be scaled up for denser/larger arrays and toward 0% for an isolated turbine.</p>
+<h3 id="uncertainty-and-exceedance-p50p75p90p99"><a class="headline-anchor" href="#uncertainty-and-exceedance-p50p75p90p99">Uncertainty and exceedance (P50/P75/P90/P99)</a></h3>
+<p>A full EYA reports uncertainty across wind resource, wake model, power curve, and interannual variability as component contributions to an overall figure, then derives P50/P75/P90 exceedance values from it. This tool uses a simplified version: a single, user-editable overall uncertainty (%, default 12%, combining rough component estimates of wind resource ~10%, wake model ~5%, and power curve ~3% via root-sum-square), applied to net AEP under a normal-distribution assumption to derive P75/P90/P99. This is a standard simplified method for expressing overall uncertainty as exceedance values, not a substitute for a project-specific, component-by-component uncertainty budget.</p>
+<hr />
+<h2 id="7-offshore-applicability"><a class="headline-anchor" href="#7-offshore-applicability">7. Offshore applicability</a></h2>
+<p>The underlying data pipeline covers open water: NASA POWER includes ocean grid points, and reanalysis wind quality over water benefits from assimilated satellite scatterometer and altimeter observations.</p>
+<ul>
+<li><strong>Wake decay constant</strong> — toggleable, 0.04 offshore vs 0.075 onshore (§4).</li>
+<li><strong>Turbine library</strong> — includes two offshore-scale classes (8.0 MW · 167 m rotor, 9.5 MW · 164 m rotor; §13).</li>
+<li><strong>Shear</strong> — offshore shear is typically lower and flatter (α ≈ 0.10–0.12) than onshore; adjustable in the Shearing tab but not defaulted differently by mode.</li>
+<li><strong>Blockage</strong> — DNV's research found blockage affects both onshore and offshore projects, with magnitude driven by turbine/layout characteristics rather than the onshore/offshore distinction; the same editable loss category applies to both.</li>
+<li><strong>Not modelled</strong> — array losses specific to 50–100+ turbine offshore farms, foundation/marine O&amp;M cost structures, bathymetry or seabed constraints.</li>
+<li><strong>Map tiles</strong> — all available basemaps render open water without issue.</li>
+</ul>
+<hr />
+<h2 id="8-known-limitations"><a class="headline-anchor" href="#8-known-limitations">8. Known limitations</a></h2>
+<ul>
+<li>Terrain correction (§11) is isotropic (direction-blind), sampled at 8 points rather than a full terrain grid, and includes no roughness-change or atmospheric-stability modelling.</li>
+<li>Wind rose is real (GWA) once a site centre is set; synthetic placeholder otherwise, labelled either way.</li>
+<li>Wake model's Ct(v) roll-off is a generic analytic shape, not a manufacturer thrust curve, and wake-added turbulence (deep-array recovery effects) is not modelled.</li>
+<li>Blockage effect is a flat literature-informed placeholder (0–4% DNV range), not a physically modelled induction-zone calculation.</li>
+<li>Roughness is a single global value, not a direction-dependent roughness rose.</li>
+<li>Weibull k in the NASA-POWER-only fallback path is a heuristic proxy derived from seasonal variability, not from real sub-daily distribution data (§3a).</li>
+<li>Air density correction is elevation-only, not a full temperature/pressure-corrected IEC 61400-12 treatment.</li>
+<li>Uncertainty/exceedance is a single-number, normal-distribution treatment, not a full component-by-component uncertainty budget.</li>
+<li>Power curves use a generic Cp-based approximation (§13a), not digitized manufacturer test data.</li>
+</ul>
+<hr />
+<h2 id="9-energy-integration-mathematics"><a class="headline-anchor" href="#9-energy-integration-mathematics">9. Energy integration mathematics</a></h2>
+<p>Annual energy per turbine is the expectation of the power curve over the wind speed distribution:</p>
+<pre><code>AEP (MWh/yr) = 8760/1000 × ∫₀^∞ f(v) · P(v) dv
+</code></pre>
+<p>where P(v) is the power curve (§13a) and f(v) is the Weibull probability density:</p>
+<pre><code>f(v) = (k/A) · (v/A)^(k−1) · exp(−(v/A)^k)
+</code></pre>
+<p>A (scale, m/s) sets the distribution's magnitude; k (shape, dimensionless, typically 1.5–2.5 onshore) sets its width — lower k means more spread. The distribution's mean relates to A through the gamma function:</p>
+<pre><code>mean = A · Γ(1 + 1/k)
+</code></pre>
+<p>so when only a mean wind speed is known (the NASA POWER path), A is recovered as <code>A = mean / Γ(1 + 1/k)</code> using a Lanczos-series gamma implementation (accurate to ~1e−13 over the range used). The integral is evaluated numerically with a fixed step of dv = 0.25 m/s from 0 to max(30, cut-out + 1) m/s, introducing well under 1% quadrature error against the smooth sigmoid power curve.</p>
+<p>On the GWA path, this integration runs <strong>per sector</strong>: each of the 12 sectors contributes <code>freqᵢ × E[P | Aᵢ, kᵢ]</code>, with the sector's A first scaled by the terrain speed-up factor (§11) and the result scaled by the air-density ratio (§3b). Wake is applied per sector by scaling that sector's A by (1 − deficit) before the integration — shifting the whole distribution down, consistent with a wake being a wind-speed (not power) deficit.</p>
+<p>The reported per-turbine "mean hub-height wind speed" is the frequency-weighted mean of the sector Weibull means, <code>Σᵢ freqᵢ · Aᵢ · Γ(1 + 1/kᵢ)</code>, after terrain speed-up and before wake — a familiar benchmark figure, though note that two sites with the same mean can differ meaningfully in energy if their k differs.</p>
+<h2 id="10-uncertainty-and-exceedance-mathematics"><a class="headline-anchor" href="#10-uncertainty-and-exceedance-mathematics">10. Uncertainty and exceedance mathematics</a></h2>
+<p>Net AEP is treated as the P50 (median) of a normal distribution whose standard deviation is the overall uncertainty σ (%). Exceedance values follow directly from normal quantiles:</p>
+<pre><code>P_x = P50 × (1 − z_x · σ)      z₇₅ = 0.6745, z₉₀ = 1.2816, z₉₉ = 2.3263
+</code></pre>
+<p>The displayed <strong>P90/P50 ratio is a restatement of the uncertainty value</strong> — with σ = 12%, P90/P50 = 1 − 1.2816 × 0.12 ≈ 0.85, always. It is shown because it is the figure lenders and analysts habitually quote, but it contains no information the uncertainty value didn't already.</p>
+<h3 id="component-build-up"><a class="headline-anchor" href="#component-build-up">Component build-up</a></h3>
+<p>The overall σ is suggested (and auto-filled until manually edited) as the root-sum-square of four components:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Basis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wind resource</td>
+<td>9% on the GWA direction-weighted path; 13% on the NASA POWER fallback (coarser ~50 km grid, no rose, heuristic Weibull k — §3a). +3% combined in (RSS) if any sited turbine trips the terrain-complexity flag (§12), where the terrain correction is least reliable.</td>
+</tr>
+<tr>
+<td>Wake model</td>
+<td>3% floor + 15% of the calculated wake loss — the standard EYA convention that wake uncertainty scales with wake magnitude, so a lightly-waked site carries little wake uncertainty and a heavily-waked one carries more.</td>
+</tr>
+<tr>
+<td>Power curve</td>
+<td>3% flat — the generic Cp-anchored approximation (§13a) is the same at every site.</td>
+</tr>
+<tr>
+<td>Interannual variability</td>
+<td>Computed per site where possible (below); literature fallback otherwise. User-overridable.</td>
+</tr>
+</tbody>
+</table>
+<p>Both the IAV and the overall value are editable; manual edits stop the auto-fill for that field. The component line is displayed alongside so the number is traceable rather than asserted.</p>
+<h3 id="interannual-variability-iav"><a class="headline-anchor" href="#interannual-variability-iav">Interannual variability (IAV)</a></h3>
+<p>Where the backend can reach NASA POWER's monthly record (MERRA-2 derived, ~50 km grid, typically 1984 onward), the site's IAV is computed rather than assumed:</p>
+<ol>
+<li>Year-by-year annual mean 50 m wind speeds are assembled from the monthly series; years with any missing month are skipped.</li>
+<li>The series is <strong>detrended</strong> (a linear fit is removed, residuals kept around the series mean) so documented long-term wind trends do not masquerade as year-to-year variability.</li>
+<li>The detrended series is scaled to the fleet's actual operating wind speed and each year is run through the active power-curve pipeline, producing an annual <strong>energy</strong> series. The coefficient of variation of that series is the IAV used.</li>
+</ol>
+<p>Computing in energy units directly avoids a known ambiguity in the literature: the widely-quoted UK figures (~6% onshore per Garrad Hassan; ~4–5.5% for UK waters per DNV's 2016 revision) are <strong>wind-speed</strong> standard deviations, and energy responds more than 1:1 to wind in the operating range — one UK study found a ~4% wind IAV corresponds to roughly a 7% capacity-factor IAV. When the fetch fails, those literature wind figures are applied as energy values directly (6% onshore / 4.5% offshore), clearly flagged as a fallback — a conservative-side simplification given the above.</p>
+<p>Caveats: the ~50 km grid makes this a regional figure, appropriate because IAV is a synoptic-scale phenomenon (NAO-driven in northwest Europe) rather than a microscale one; it is not a substitute for an on-site long-term correlation (MCP) study.</p>
+<hr />
+<h2 id="11-terrain-speed-up-correction"><a class="headline-anchor" href="#11-terrain-speed-up-correction">11. Terrain speed-up correction</a></h2>
+<p>Turbine-level wind speed does not otherwise account for local topography — a wind speed derived from a regional reanalysis or generalized GWC value applies equally to a turbine on a hill crest and one in a sheltered valley.</p>
+<p>A full correction would require a WAsP-equivalent implementation: a linearized spectral flow solution over a real terrain grid, with roughness-change and displacement-height modelling. The approximation implemented instead is the Jackson &amp; Hunt (1975) linear theory result for flow over an isolated hill, giving the fractional wind speed-up near a hill's crest as:</p>
+<pre><code>ΔS/S ≈ 2H/L
+</code></pre>
+<p>where H is the hill's height above its surroundings and L is its characteristic horizontal half-length (see Troen &amp; Petersen 1989, the WAsP reference, for the full derivation).</p>
+<p><strong>Computation.</strong> For each turbine, the backend samples elevation at the turbine's location plus an 8-point ring at ~2 km radius, via a single batched Open-Elevation request. H is the turbine's own elevation minus the mean elevation of that 2 km ring ("local prominence"); L is the 2 km ring radius. The result is clamped to ±25%.</p>
+<p>The resulting fractional speed-up scales wind speed (the Weibull A parameter, or mean wind speed in the fallback path), not power output directly — air density correction (§3b) is applied separately for that.</p>
+<p><strong>Limitations:</strong></p>
+<ul>
+<li>Isotropic: applied equally regardless of wind direction. Real terrain speed-up is direction-dependent — a ridge speeds up wind arriving roughly perpendicular to it and has little or negative effect on wind along its length. A WAsP assessment computes this per sector.</li>
+<li>8 sampled points, not a full DEM: a ridge, valley, or escarpment narrower than the 2 km sampling radius, or oriented awkwardly relative to the 8 sample bearings, is not captured accurately.</li>
+<li>No roughness-change or displacement-height modelling.</li>
+<li>No atmospheric stability dependence.</li>
+</ul>
+<p>This is a first-order approximation for typical rolling terrain, not a substitute for a WAsP or CFD terrain assessment, particularly in complex mountainous terrain where linear theory itself begins to break down — the terrain complexity flag (§12) is intended to surface that case.</p>
+<hr />
+<h2 id="12-terrain-complexity-flag"><a class="headline-anchor" href="#12-terrain-complexity-flag">12. Terrain complexity flag</a></h2>
+<p>Each turbine's card and the Per-turbine results tab display a warning when local terrain is steep enough that the §11 correction may not be reliable.</p>
+<p>The flag is based on maximum slope (elevation difference ÷ distance) across all 12 sampled points (the 1 km and 2 km rings), flagged where slope exceeds 18%. An earlier version used raw elevation range (&gt;40 m within 1 km), corresponding to only a 4% grade — ordinary rolling terrain across most of the UK — and fired too broadly to be a useful signal. The 18% threshold is more conservative than GWA's own RIX metric (30% slope), since this flag is intended to catch terrain steep enough that the underlying Jackson &amp; Hunt linear theory (§11) begins to break down.</p>
+<p>This is not a formal ruggedness index; GWA's RIX requires full DEM slope analysis across the surrounding area, not 12 sampled points.</p>
+<hr />
+<h2 id="13-turbine-library"><a class="headline-anchor" href="#13-turbine-library">13. Turbine library</a></h2>
+<p>Ten generic turbine classes plus a fully user-definable "Custom" entry (the default for any newly placed turbine). Entries are named by their defining parameters (rated power and rotor diameter) rather than manufacturer model names: the key parameters are drawn from turbines common in the UK and Europe, but the power curve is a generic approximation (§13a), so branding an entry with a trademarked model name would imply manufacturer performance data that is not present.</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Manufacturer</th>
+<th>Type</th>
+<th>Rated power</th>
+<th>Rotor D</th>
+<th>Typical hub height</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2.0 MW · 80 m rotor</td>
+<td>Generic</td>
+<td>Onshore</td>
+<td>2.0 MW</td>
+<td>80m</td>
+<td>70m</td>
+</tr>
+<tr>
+<td>2.0 MW · 90 m rotor</td>
+<td>Generic</td>
+<td>Onshore</td>
+<td>2.0 MW</td>
+<td>90m</td>
+<td>80m</td>
+</tr>
+<tr>
+<td>3.45 MW · 112 m rotor</td>
+<td>Generic</td>
+<td>Onshore</td>
+<td>3.45 MW</td>
+<td>112m</td>
+<td>94m</td>
+</tr>
+<tr>
+<td>4.2 MW · 150 m rotor</td>
+<td>Generic</td>
+<td>Onshore</td>
+<td>4.2 MW</td>
+<td>150m</td>
+<td>125m</td>
+</tr>
+<tr>
+<td>3.4 MW · 132 m rotor</td>
+<td>Generic</td>
+<td>Onshore</td>
+<td>3.4 MW</td>
+<td>132m</td>
+<td>90m</td>
+</tr>
+<tr>
+<td>3.6 MW · 120 m rotor</td>
+<td>Generic</td>
+<td>Offshore</td>
+<td>3.6 MW</td>
+<td>120m</td>
+<td>90m</td>
+</tr>
+<tr>
+<td>3.05 MW · 101 m rotor</td>
+<td>Generic</td>
+<td>Onshore</td>
+<td>3.05 MW</td>
+<td>101m</td>
+<td>99m</td>
+</tr>
+<tr>
+<td>3.9 MW · 131 m rotor</td>
+<td>Generic</td>
+<td>Onshore</td>
+<td>3.9 MW</td>
+<td>131m</td>
+<td>114m</td>
+</tr>
+<tr>
+<td>8.0 MW · 167 m rotor</td>
+<td>Generic</td>
+<td>Offshore</td>
+<td>8.0 MW</td>
+<td>167m</td>
+<td>110m</td>
+</tr>
+<tr>
+<td>9.5 MW · 164 m rotor</td>
+<td>Generic</td>
+<td>Offshore</td>
+<td>9.5 MW</td>
+<td>164m</td>
+<td>105m</td>
+</tr>
+</tbody>
+</table>
+<p>Rated power, rotor diameter, typical hub height, and cut-in/cut-out wind speeds are drawn from public manufacturer specifications and industry references. Nameplate "rated wind speed" is retained for reference but does not govern the power curve shape (§13a). Manufacturer power-curve tables are not available in machine-readable form — they are published only as graphics inside proprietary datasheet documents — so curve shape is approximated per §13a rather than digitized.</p>
+<p>The 3.05 MW · 101 m class approximates storm-control behaviour (gradual power reduction in high wind rather than a hard stop) with a flat cut-out at 28 m/s; the 3.9 MW · 131 m class uses a lower cut-out (20 m/s) reflecting typical low-wind-class configurations.</p>
+<h2 id="13a-power-curve-model"><a class="headline-anchor" href="#13a-power-curve-model">13a. Power curve model</a></h2>
+<p>The power curve between cut-in and cut-out is modelled as a logistic (sigmoid) function anchored to each turbine's rotor size via its maximum power coefficient (Cp), rather than a cubic ramp to the nameplate rated wind speed.</p>
+<p><strong>Basis.</strong> Nameplate rated wind speed is a conservative figure tied to IEC certification rather than the speed at which a real turbine reaches rated output. Real turbines hold close to their maximum power coefficient across a wide speed range via blade pitch control and reach rated output well before their nameplate rated speed. A cubic curve pinned to the nameplate figure understates output substantially in the 6–11 m/s range that dominates most UK sites — for the 2.0 MW · 80 m class (16 m/s nameplate rated speed), this understated output at 6–10 m/s by roughly a factor of three against a basic physical estimate (available wind power × Betz limit × typical efficiency).</p>
+<p><strong>Model:</strong></p>
+<ol>
+<li><code>v50</code>, the wind speed at which an idealised constant-Cp turbine of the given rotor size produces exactly half its rated power:
+   <code>0.5 × ratedKW×1000 = 0.5 × ρ × π(D/2)² × Cp_max × v50³</code></li>
+<li><code>P(v) = ratedKW / (1 + exp(−b·(v − v50)))</code>, clipped to <code>[0, ratedKW]</code> and to <code>[v_cutin, v_cutout]</code>.</li>
+<li><code>b</code> sets the transition width, chosen so the curve moves from 5% to 95% of rated power over a ±3 m/s window around <code>v50</code>.</li>
+</ol>
+<p><code>Cp_max = 0.45</code> is applied fleet-wide as a single maximum power coefficient, within the literature-typical range for modern turbines (approximately 0.45–0.48, against a 0.593 Betz limit; Manwell, McGowan &amp; Rogers, <em>Wind Energy Explained</em>), rather than a per-model tuned figure — no verified per-model curve data was available to calibrate against individually. Cp_max is user-editable per turbine, including a bulk "set for all sited turbines" control, for calibration against known site or fleet performance data.</p>
+<p><strong>Cross-checks.</strong> Reproducing a UK onshore farm's published net capacity factor (Braes of Doune, 36 × 2.0 MW/80 m machines, 22.5%) with this curve, a wake loss consistent with actual turbine spacing, and the standard loss waterfall implies a hub-height mean wind speed of approximately 6.9 m/s, consistent with the location. A UK offshore farm (London Array, 175 × 3.6 MW/120 m machines), using the default Cp_max = 0.45 without adjustment, produced a net capacity factor of 37.6% against a published multi-year average of 38–40%. Applying one Cp_max to turbine generations of different vintage (2004 and 2012, in these two cases) is an approximation; these results indicate it is usable as a default, not that it is precise for any individual model.</p>
+<p>Custom turbines expose fully editable rated power, rotor diameter, cut-in/cut-out wind speeds, hub height, and Cp_max.</p>
+<hr />
+<h2 id="14-reproducibility"><a class="headline-anchor" href="#14-reproducibility">14. Reproducibility</a></h2>
+<p>Re-running an identical saved site gives identical results as of v11, with one caveat below. Earlier versions could return slightly different elevations for the same turbine between sessions: the backend cached elevation results keyed at 2-decimal-place coordinates (~0.7–1.1 km), so turbines within ~1 km of each other shared one cache slot and could be served each other's terrain data depending on request timing — enough to move gross yield a few percent between reloads at terrain-sensitive sites. The cache now keys at 4 decimal places (~11 m), making elevation lookups position-exact.</p>
+<p>Residual (small, legitimate) sources of run-to-run variation: upstream data providers occasionally update their datasets (NASA POWER climatology revisions, GWA version updates, Open-Elevation source changes), so results may shift slightly across months. Within a session and across save/reload cycles against unchanged upstream data, results are deterministic.</p>
+<h2 id="15-change-log"><a class="headline-anchor" href="#15-change-log">15. Change log</a></h2>
+<p>Technical summary of substantive changes, most recent first. UI-only tweaks omitted.</p>
+<p><strong>v11.0</strong>
+- Fixed backend elevation-cache key collision (2-dp → 4-dp coordinates) that let nearby turbines swap terrain data between reloads (§14).
+- Wake model replaced: Jensen top-hat with hard sector binning → Bastankhah–Porté-Agel Gaussian profile with continuous per-sector geometry (5 sub-bearings per sector), turbulence-derived wake growth (k* from roughness via TI), root-sum-square multi-wake combination, and vertical offset for mixed hub heights (§4). Micrositing now changes wake loss smoothly, and interior turbines in large arrays feel all upstream rows.
+- Turbine library renamed to generic class descriptors; power curves are generic approximations, not manufacturer data (§13).
+- Per-turbine mean hub-height wind speed now reported (pre-wake, incl. terrain speed-up) in the results table and exported report (§9).
+- P90/P50 ratio relabelled to make explicit it restates the uncertainty input (§10).
+- Roughness's first-order effect on the GWA path documented and flagged in-app (§5).
+- Documentation renamed from "Wiki" to "Manual"; energy-integration (§9) and uncertainty (§10) mathematics added.
+- Wind rose moved to a dismissible corner overlay; site-centre-vs-turbine-centroid warning and centroid button added; adjustable spacing ellipses (default 5D × 3D, major axis aligned to the prevailing wind); bulk hub-height apply; map zooms to loaded sites.
+- Uncertainty rebuilt as a component build-up (resource / wake / power curve / IAV, root-sum-square) with a per-site computed interannual variability from the detrended NASA POWER monthly record, converted to energy through the power-curve pipeline; literature fallback (6% onshore / 4.5% offshore) when unavailable. IAV and overall values editable; auto-fill stops on manual edit (§10).
+- Thrust coefficient now varies with wind speed via a sector-effective Weibull-weighted Ct, replacing the flat 0.8 that overstated high-wind wakes (§4).
+- CSV data export alongside the .txt report; native save dialog on supporting browsers.
+- Shearing tab: measured wind-speeds-at-height fit (least-squares α), and an explicit inactive notice when the GWA path is handling height interpolation.
+- Turbine cards consistently start collapsed; stale expanded-state after site loads fixed.
+- Exported reports now state the roughness, shear, and wake-decay settings in the header, so a report is self-describing evidence of its own assumptions.
+- Backend CORS restricted to the deployed frontend origin (previously any website could call the API from its visitors' browsers); backend caches size-capped.</p>
+<p><strong>v10.x</strong>
+- Power curve replaced: cubic ramp to nameplate rated speed → logistic curve anchored to rotor size via Cp_max (default 0.45, user-editable per turbine and in bulk). Validated against two operating UK farms (§13a).
+- Log-law shear extrapolation added alongside the power law (§3).
+- Direction-weighted Jensen wake using per-sector GWA Weibull data; upstream turbine's rotor diameter used in the deficit.
+- Weibull scale parameter derived with a proper gamma function (previously hard-coded for k=2 only).
+- Bulk elevation fetches queued (concurrency 3) after simultaneous bursts were found to be silently rejected by the free elevation service.
+- Terrain speed-up (Jackson &amp; Hunt 2H/L, ±25% clamp) and slope-based terrain-complexity flag added (§11–12).
+- Deployment hardening: fixed backend URL, health-check/wake-up on load, longer fetch timeouts matched to free-tier cold starts.</p>
+<p><strong>v9 and earlier</strong>
+- Initial NASA POWER climatology pipeline, Weibull integration, omnidirectional Jensen wake, DNV/IEC-style multiplicative loss waterfall, P50–P99 exceedance, save/load site files, Netlify/Render deployment.</p>
+<h2 id="16-roadmap"><a class="headline-anchor" href="#16-roadmap">16. Roadmap</a></h2>
+<ul>
+<li>Replace NASA POWER with ERA5 (via Copernicus CDS) for higher resolution and multi-height shear data independent of site centre.</li>
+<li>Direction-dependent (sectoral) roughness rose in place of a single global value.</li>
+<li>Wake-added turbulence for deep-array effects; manufacturer thrust curves in place of the analytic Ct(v) roll-off.</li>
+<li>A physically modelled blockage/induction-zone calculation in place of the flat placeholder.</li>
+<li>Digitized manufacturer power curves in place of the Cp-based approximation in §13a.</li>
+<li>PDF/print-formatted report export.</li>
+</ul>
+</article>
+</main>
+<footer>Screening tool documentation · not an Energy Yield Assessment · no liability accepted</footer>
+<script>
+  var toggle = document.getElementById('menuToggle');
+  var nav = document.getElementById('tocNav');
+  var backdrop = document.getElementById('navBackdrop');
+  function closeNav(){ nav.classList.remove('open'); backdrop.classList.remove('open'); }
+  function openNav(){ nav.classList.add('open'); backdrop.classList.add('open'); }
+  toggle.addEventListener('click', function(){
+    nav.classList.contains('open') ? closeNav() : openNav();
+  });
+  backdrop.addEventListener('click', closeNav);
+  nav.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', closeNav); });
+</script>
+</body>
+</html>
