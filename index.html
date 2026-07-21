@@ -189,7 +189,7 @@
     /* Paired action buttons stay side-by-side on mobile: two half-width
        buttons beat two full-width rows for thumb reach and screen space. */
     .field-row:has(> .btn) { grid-template-columns: 1fr 1fr; }
-    #bulkApplyCard .field-row { grid-template-columns: 1fr; }
+    #defBenchCard .field-row { grid-template-columns: 1fr 1fr; }
 
     /* Larger touch targets */
     .btn { padding: 12px 14px; font-size: 13px; }
@@ -323,37 +323,12 @@
           <input type="file" id="loadSiteInput" accept=".txt,text/plain" style="display:none;">
           <button class="btn btn-secondary btn-danger" id="clearBtn" style="display:none;margin-bottom:12px;">Clear all turbines</button>
 
-          <div class="turbine-card" id="bulkApplyCard" style="display:none;">
-            <select id="bulkModelSelect"></select>
-            <button class="btn btn-primary" id="bulkApplyBtn" style="margin-top:8px;">Apply to all sited turbines</button>
-            <div class="field-row" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--panel-line);">
-              <div class="field-wrap">
-                <label>Set Cp for all sited turbines</label>
-                <input type="text" id="bulkCpInput" value="0.45">
-              </div>
-              <div style="display:flex;align-items:flex-end;">
-                <button class="btn btn-secondary" id="bulkCpApplyBtn" style="width:100%;">Apply Cp to all</button>
-              </div>
-            </div>
-            <div class="field-row" style="margin-top:10px;">
-              <div class="field-wrap">
-                <label>Set rotor diameter for all (m)</label>
-                <input type="text" id="bulkRDInput" value="90">
-              </div>
-              <div style="display:flex;align-items:flex-end;">
-                <button class="btn btn-secondary" id="bulkRDApplyBtn" style="width:100%;">Apply RD to all</button>
-              </div>
-            </div>
-            <div class="field-row" style="margin-top:10px;">
-              <div class="field-wrap">
-                <label>Set hub height for all (m)</label>
-                <input type="text" id="bulkHHInput" value="80">
-              </div>
-              <div style="display:flex;align-items:flex-end;">
-                <button class="btn btn-secondary" id="bulkHHApplyBtn" style="width:100%;">Apply HH to all</button>
-              </div>
-            </div>
-            <div class="hint" style="margin-top:6px;margin-bottom:0;">Cp and hub height override every sited turbine, including library models — for calibration testing, not a library change. Rotor diameter applies to Custom-model turbines only: library rotors are fixed by the model class (switch all to Custom first to override).</div>
+          <div class="turbine-card" id="defBenchCard" style="display:none;">
+            <div class="hint" style="margin-top:0;margin-bottom:8px;"><strong>Turbine definition</strong> — build a spec here and apply it to every sited turbine at once. Editing any field turns the definition Custom.</div>
+            <select id="defBenchSelect"></select>
+            <div id="defBenchFields"></div>
+            <button class="btn btn-primary" id="defBenchApplyBtn" style="margin-top:10px;width:100%;">Apply to all sited turbines</button>
+            <div class="hint" style="margin-top:6px;margin-bottom:0;">Overwrites every sited turbine's spec with this definition (they all become Custom). Turbine positions are unchanged. The definition stays here after applying, so you can tweak and re-apply.</div>
           </div>
 
           <div id="turbineCards"></div>
@@ -676,84 +651,90 @@ function getTurbineSpec(pos){
 }
 
 // ---------- Bulk apply: set one turbine model across every sited turbine ----------
-const bulkSelect = document.getElementById('bulkModelSelect');
+// ---------- Turbine definition bench ----------
+// A standalone spec that only writes to turbines on "Apply to all". It never
+// reads back from a sited turbine. Starts from a library class; editing any
+// field flips it to Custom. Persists after applying so tweaks are cheap.
+let defBenchSpec = { ...TURBINES.custom };
+let defBenchModel = 'custom';
+
+const defBenchSelect = document.getElementById('defBenchSelect');
 Object.entries(TURBINES).forEach(([key, s]) => {
   const opt = document.createElement('option');
   opt.value = key;
-  opt.textContent = key === 'custom' ? 'Custom' : `${s.manufacturer} ${s.name} (${s.type})`;
-  bulkSelect.appendChild(opt);
+  opt.textContent = key === 'custom' ? 'Custom (define below)' : `${s.name} (${s.type})`;
+  defBenchSelect.appendChild(opt);
 });
-document.getElementById('bulkApplyBtn').addEventListener('click', () => {
-  const model = bulkSelect.value;
-  turbines.forEach(t => {
-    t.model = model;
-    delete t.cpMax;
-    if (model === 'custom'){
-      t.customSpec = { ...TURBINES.custom, hubHeight: t.hubHeight };
-    } else {
-      t.hubHeight = TURBINES[model].hubHeight;
-    }
+
+function renderDefBenchFields(){
+  const host = document.getElementById('defBenchFields');
+  host.innerHTML = '';
+  const s = defBenchSpec;
+
+  const rowA = document.createElement('div');
+  rowA.className = 'field-row';
+  rowA.appendChild(makeField('Rated power (kW)', s.ratedKW, v => { s.ratedKW = v; markBenchCustom(); }, 0));
+  rowA.appendChild(makeField('Rotor D (m)', s.rotorD, v => { s.rotorD = v; markBenchCustom(); }, 0));
+  host.appendChild(rowA);
+
+  const rowB = document.createElement('div');
+  rowB.className = 'field-row three';
+  rowB.appendChild(makeField('Cut-in (m/s)', s.vCutIn, v => { s.vCutIn = v; markBenchCustom(); }, 1));
+  rowB.appendChild(makeField('Rated (m/s)', s.vRated, v => { s.vRated = v; markBenchCustom(); }, 1));
+  rowB.appendChild(makeField('Cut-out (m/s)', s.vCutOut, v => { s.vCutOut = v; markBenchCustom(); }, 1));
+  host.appendChild(rowB);
+
+  const rowC = document.createElement('div');
+  rowC.className = 'field-row';
+  rowC.appendChild(makeField('Max Cp', s.cpMax, v => { s.cpMax = v; markBenchCustom(); }, 2));
+  rowC.appendChild(makeField('Hub height (m)', s.hubHeight, v => { s.hubHeight = v; markBenchCustom(); }, 1));
+  host.appendChild(rowC);
+
+  const cpHint = document.createElement('div');
+  cpHint.className = 'hint';
+  cpHint.style.marginTop = '0';
+  cpHint.textContent = 'Cp drives the power curve · Betz limit 0.593 — Manual §13a';
+  host.appendChild(cpHint);
+}
+
+// Editing any field means the definition no longer matches the chosen library
+// class, so it becomes Custom — both in the model variable and the dropdown.
+function markBenchCustom(){
+  if (defBenchModel !== 'custom'){
+    defBenchModel = 'custom';
+    defBenchSelect.value = 'custom';
+  }
+}
+
+defBenchSelect.onchange = (e) => {
+  defBenchModel = e.target.value;
+  // Load the chosen class's spec as the starting point. Custom loads the
+  // library's blank-ish custom template.
+  defBenchSpec = { ...TURBINES[defBenchModel] };
+  renderDefBenchFields();
+};
+
+document.getElementById('defBenchApplyBtn').addEventListener('click', () => {
+  if (turbines.length === 0) return;
+  // Validate before stamping — a malformed bench shouldn't corrupt the fleet.
+  const s = defBenchSpec;
+  if (!(s.ratedKW > 0) || !(s.rotorD >= 10) || !(s.cpMax > 0 && s.cpMax <= 0.593) ||
+      !(s.hubHeight >= 10 && s.hubHeight <= 300) || !(s.vCutIn >= 0) || !(s.vCutOut > s.vCutIn)){
+    alert('Check the definition: rated power > 0, rotor ≥ 10 m, 0 < Cp ≤ 0.593, hub 10–300 m, cut-out > cut-in.');
+    return;
+  }
+  // Every turbine becomes Custom carrying a COPY of the bench spec (copy so
+  // later per-turbine edits don't mutate the shared bench or each other).
+  turbines.forEach(o => {
+    o.model = 'custom';
+    delete o.cpMax;
+    o.customSpec = { ...s };
   });
   renderTurbineCards();
   recalculate();
 });
 
-document.getElementById('bulkCpApplyBtn').addEventListener('click', () => {
-  const val = parseFloat(document.getElementById('bulkCpInput').value);
-  if (isNaN(val) || val <= 0 || val > 0.593){
-    alert('Enter a Cp between 0 and 0.593 (the Betz limit).');
-    return;
-  }
-  turbines.forEach(t => {
-    if (t.model === 'custom'){
-      if (t.customSpec) t.customSpec.cpMax = val;
-    } else {
-      t.cpMax = val;
-    }
-  });
-  renderTurbineCards();
-  recalculate();
-});
-
-document.getElementById('bulkRDApplyBtn').addEventListener('click', () => {
-  const val = parseFloat(document.getElementById('bulkRDInput').value);
-  if (isNaN(val) || val < 10 || val > 260){
-    alert('Enter a rotor diameter between 10 and 260 m.');
-    return;
-  }
-  // Custom-only by design: a library model's rotor diameter is part of what
-  // the model IS — silently resizing a "V90" to 120 m would make every label
-  // and report line a lie. Cp/HH overrides are calibration knobs; rotor size
-  // is identity. Bulk "Apply to all" with Custom selected converts the fleet
-  // first, after which this applies everywhere.
-  let applied = 0, skipped = 0;
-  turbines.forEach(t => {
-    if (t.model === 'custom' && t.customSpec){ t.customSpec.rotorD = val; applied++; }
-    else skipped++;
-  });
-  if (skipped > 0){
-    alert(`Rotor diameter applied to ${applied} Custom turbine(s); ${skipped} library-model turbine(s) unchanged (rotor is fixed by the model class — use "Apply to all sited turbines" with Custom selected to convert them first).`);
-  }
-  renderTurbineCards();
-  recalculate();
-});
-
-document.getElementById('bulkHHApplyBtn').addEventListener('click', () => {
-  const val = parseFloat(document.getElementById('bulkHHInput').value);
-  if (isNaN(val) || val < 10 || val > 300){
-    alert('Enter a hub height between 10 and 300 m.');
-    return;
-  }
-  turbines.forEach(t => {
-    if (t.model === 'custom'){
-      if (t.customSpec) t.customSpec.hubHeight = val;
-    } else {
-      t.hubHeight = val;
-    }
-  });
-  renderTurbineCards();
-  recalculate();
-});
+renderDefBenchFields();
 
 // ---------- Losses ----------
 function getLossInputs(){
@@ -1106,11 +1087,16 @@ function addTurbine(lat, lng){
   const marker = L.circleMarker([lat, lng], { radius: 8, color: '#b5650d', weight: 2, fillColor: '#b5650d', fillOpacity: 0.55 }).addTo(map);
   marker.bindTooltip(`T${turbines.length + 1}`, { permanent: true, direction: 'top', offset: [0, -6] });
   wireMarkerRemoval(marker, id);
+  // New turbines take the definition bench's current spec, so a turbine
+  // placed after "Apply to all" matches the fleet instead of silently
+  // reverting to a different default. The bench initialises to the same
+  // Custom template as the old DEFAULT_MODEL, so pre-bench behaviour is
+  // unchanged.
   turbines.push({
     id, lat, lng, marker,
-    model: DEFAULT_MODEL,
-    hubHeight: TURBINES[DEFAULT_MODEL].hubHeight,
-    customSpec: { ...TURBINES.custom }, // independent copy — editing one custom turbine shouldn't affect another
+    model: defBenchModel,
+    hubHeight: defBenchSpec.hubHeight,
+    customSpec: { ...defBenchSpec }, // independent copy — editing one custom turbine shouldn't affect another
     elevationData: null
   });
   fetchAndApplyElevation(turbines[turbines.length - 1]);
@@ -1144,19 +1130,19 @@ function renderTurbineCards(){
   const container = document.getElementById('turbineCards');
   const empty = document.getElementById('emptyNote');
   const clearBtn = document.getElementById('clearBtn');
-  const bulkCard = document.getElementById('bulkApplyCard');
+  const defBench = document.getElementById('defBenchCard');
   document.getElementById('turbineCount').textContent = turbines.length;
   container.innerHTML = '';
 
   if (turbines.length === 0){
     empty.style.display = 'block';
     clearBtn.style.display = 'none';
-    bulkCard.style.display = 'none';
+    defBench.style.display = 'none';
     return;
   }
   empty.style.display = 'none';
   clearBtn.style.display = 'block';
-  bulkCard.style.display = turbines.length > 1 ? 'block' : 'none';
+  defBench.style.display = turbines.length > 0 ? 'block' : 'none';
 
   turbines.forEach((t, i) => {
     const spec = getTurbineSpec(t);
@@ -1220,6 +1206,10 @@ function renderTurbineCards(){
 
     if (isCustom){
       if (t.customSpec.cpMax === undefined) t.customSpec.cpMax = 0.45; // backfill for pre-v10.3 site files
+
+      // Layout mirrors the library-turbine define sketch: three paired rows
+      // (power|rotor, then the three speeds, then Cp|hub height) followed by a
+      // per-card "apply these specs to every sited turbine" action.
       const rowA = document.createElement('div');
       rowA.className = 'field-row';
       rowA.appendChild(makeField('Rated power (kW)', t.customSpec.ratedKW, (val) => { t.customSpec.ratedKW = val; recalculate(); }, 0));
@@ -1229,30 +1219,28 @@ function renderTurbineCards(){
       const rowB = document.createElement('div');
       rowB.className = 'field-row three';
       rowB.appendChild(makeField('Cut-in (m/s)', t.customSpec.vCutIn, (val) => { t.customSpec.vCutIn = val; recalculate(); }, 1));
-      rowB.appendChild(makeField('Rated (m/s, nameplate)', t.customSpec.vRated, (val) => { t.customSpec.vRated = val; recalculate(); }, 1));
+      rowB.appendChild(makeField('Rated (m/s)', t.customSpec.vRated, (val) => { t.customSpec.vRated = val; recalculate(); }, 1));
       rowB.appendChild(makeField('Cut-out (m/s)', t.customSpec.vCutOut, (val) => { t.customSpec.vCutOut = val; recalculate(); }, 1));
       body.appendChild(rowB);
 
       const rowC = document.createElement('div');
       rowC.className = 'field-row';
-      rowC.appendChild(makeField('Max power coefficient (Cp)', t.customSpec.cpMax, (val) => { t.customSpec.cpMax = val; recalculate(); }, 2));
+      rowC.appendChild(makeField('Max Cp', t.customSpec.cpMax, (val) => { t.customSpec.cpMax = val; recalculate(); }, 2));
+      rowC.appendChild(makeField('Hub height (m)', t.customSpec.hubHeight, (val) => { t.customSpec.hubHeight = val; recalculate(); }, 1));
       body.appendChild(rowC);
+
       const cpHint = document.createElement('div');
       cpHint.className = 'hint';
       cpHint.style.marginTop = '0';
-      cpHint.textContent = 'Drives the power curve · Betz limit 0.593 — Manual §13a';
+      cpHint.textContent = 'Cp drives the power curve · Betz limit 0.593 — Manual §13a';
       body.appendChild(cpHint);
+    } else {
+      const row1 = document.createElement('div');
+      row1.className = 'field-row';
+      row1.appendChild(makeField('Hub height (m)', t.hubHeight, (val) => { t.hubHeight = val; recalculate(); }, 1));
+      row1.appendChild(makeField('Rotor D (m)', spec.rotorD, null, 0, true));
+      body.appendChild(row1);
     }
-
-    const row1 = document.createElement('div');
-    row1.className = 'field-row';
-    row1.appendChild(makeField('Hub height (m)', isCustom ? t.customSpec.hubHeight : t.hubHeight, (val) => {
-      if (isCustom) t.customSpec.hubHeight = val; else t.hubHeight = val;
-      recalculate();
-    }, 1));
-    row1.appendChild(makeField('Rotor D (m)', spec.rotorD, null, 0, true));
-    if (isCustom) row1.children[1].style.display = 'none'; // already editable above, avoid duplicate
-    body.appendChild(row1);
 
     if (!isCustom){
       const rowCp = document.createElement('div');
@@ -1800,7 +1788,7 @@ function updateEra5Hints(){
       // energy is rated power x lost hours; expressed against AEP at the
       // current net CF (falls back to 0.40 before first full calc).
       const cf = (window._lastNetCF && window._lastNetCF > 0.05) ? window._lastNetCF : 0.40;
-      const pctAEP = 100 * lostPerYr / (8766 * cf);
+      const pctAEP = 100 * lostPerYr / (8760 * cf);
       hystHint.innerHTML = `ERA5: ${hy.lost_hours} deadband hours over ${era5Stats.nYears} yrs (${lostPerYr.toFixed(1)} h/yr) &asymp; <strong>${pctAEP.toFixed(2)}% of AEP</strong> at current CF. Enter in 4b if appropriate. Slight underestimate — ERA5 under-resolves the high-wind tail.`;
     }
   }
@@ -1964,7 +1952,8 @@ async function recalculate(){
   const totalNet = aggregate.net;
   // Net CF exposed for the 4b hysteresis hint (deadband hours are at rated
   // power, so %AEP depends on the fleet's own CF).
-  window._lastNetCF = totalRatedKW > 0 ? totalNet / (totalRatedKW * 8766) : 0;
+  // MWh -> kWh (x1000); 8760 h/yr matches the AEP integration and capFactor basis.
+  window._lastNetCF = totalRatedKW > 0 ? (totalNet * 1000) / (totalRatedKW * 8760) : 0;
   updateEra5Hints();
   const capFactor = totalRatedKW > 0 ? (totalNet * 1000) / (totalRatedKW * 8760) * 100 : 0;
 
