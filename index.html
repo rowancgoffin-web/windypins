@@ -24,7 +24,16 @@
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased; }
-  .app { display: grid; grid-template-columns: 380px 1fr; height: 100vh; }
+  .print-only { display: none; }
+  .app { display: grid; grid-template-columns: var(--sidebar-w, 380px) 1fr; height: 100vh; }
+  /* Drag handle between sidebar and map: desktop resizes sidebar width,
+     mobile (stacked) resizes map height. Pointer events cover mouse+touch. */
+  #sidebarResizer { position: fixed; top: 0; left: calc(var(--sidebar-w, 380px) - 4px);
+    width: 9px; height: 100vh; cursor: col-resize; z-index: 1500; touch-action: none; }
+  #sidebarResizer::after { content: ""; position: absolute; left: 3px; top: 50%;
+    width: 3px; height: 44px; transform: translateY(-50%); border-radius: 2px;
+    background: rgba(102,112,133,0.35); }
+  #sidebarResizer:hover::after, #sidebarResizer.dragging::after { background: var(--amber); }
   .sidebar { background: var(--panel); border-right: 1px solid var(--panel-line); display: flex; flex-direction: column; overflow: hidden; }
 
   .topstrip { padding: 16px 20px 12px; border-bottom: 1px solid var(--panel-line); flex-shrink: 0; background: linear-gradient(180deg, #ffffff 0%, var(--panel) 100%); }
@@ -178,7 +187,7 @@
        shown in flow with a document header. */
     #map, .tabnav, .btn, button, input, select, .checkbox-row,
     #tab-cover, #tab-siting, #tab-neighbours, #tab-shearing, #tab-losses,
-    .wiki-top-link, #mapClickPrompt { display: none !important; }
+    .wiki-top-link, #mapClickPrompt, #sidebarResizer { display: none !important; }
     .tab-panel { display: block !important; }
     #tab-results, #tab-breakdown { display: block !important; }
     body::before {
@@ -186,11 +195,12 @@
       display: block; font-family: var(--mono); font-size: 11px;
       color: #444; padding: 0 0 10px; border-bottom: 1px solid #999; margin-bottom: 14px;
     }
-    #waterfallModal { display: block !important; position: static !important;
-      background: none !important; padding: 0 !important; }
-    #waterfallModal > div { max-width: none !important; max-height: none !important;
-      overflow: visible !important; padding: 0 !important; box-shadow: none; }
+    /* Waterfall prints in-flow inside Results (above the per-turbine panel),
+       not as the floating modal — see #waterfallPrintHost. */
+    #waterfallModal { display: none !important; }
+    .print-only { display: block !important; }
     #monthlyProfileCard { display: block !important; }
+    #monthlyExpandBtn, #monthlyModal { display: none !important; }
     .app, .sidebar { display: block !important; width: 100% !important; height: auto !important; max-height: none !important; overflow: visible !important; }
     body { background: #fff !important; color: #111 !important; }
     .table-scroll { overflow: visible !important; max-height: none !important; }
@@ -198,7 +208,11 @@
   @media (max-width: 880px){
     body { overflow: auto; height: auto; }
     .app { display: flex; flex-direction: column; height: auto; }
-    #map { height: 46vh; order: -1; }
+    #map { height: var(--map-h, 46vh); order: -2; }
+    #sidebarResizer { position: static; order: -1; width: 100%; height: 18px;
+      cursor: row-resize; display: flex; align-items: center; justify-content: center;
+      background: var(--panel); border-top: 1px solid var(--panel-line); }
+    #sidebarResizer::after { position: static; transform: none; width: 44px; height: 4px; }
     .sidebar { border-right: none; border-top: 1px solid var(--panel-line); overflow: visible; }
     .tab-panels { overflow: visible; }
 
@@ -234,6 +248,7 @@
 </head>
 <body>
 <div class="app">
+<div id="sidebarResizer" title="Drag to resize"></div>
   <div class="sidebar">
     <div class="topstrip">
       <div class="brand">
@@ -575,6 +590,13 @@
             <h3 style="margin:0 0 2px;">Seasonal energy profile</h3>
             <div class="hint" style="margin-top:0;">Monthly share of annual energy. ERA5 seasonal shape scaled to the GWA-based annual total — the months' relative weights, not twelve independent absolutes.</div>
             <div id="monthlyProfileHost"></div>
+            <button class="btn btn-secondary" id="monthlyExpandBtn" style="width:100%;margin-top:6px;">Expand seasonal profile</button>
+          </div>
+
+          <div id="waterfallPrintHost" class="print-only">
+            <h3 style="margin:14px 0 2px;">Loss waterfall</h3>
+            <div class="hint" id="waterfallPrintSubtitle" style="margin-top:0;"></div>
+            <div id="waterfallPrintChart"></div>
           </div>
 
           <button class="btn btn-secondary" id="waterfallBtn" style="width:100%;margin-top:12px;">View loss waterfall diagram</button>
@@ -608,10 +630,18 @@
     </div>
 </div>
 
+<div id="monthlyModal" style="display:none;position:fixed;inset:0;background:rgba(10,14,18,0.72);z-index:2000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--panel,#fff);border-radius:10px;max-width:860px;width:100%;max-height:92vh;overflow:auto;padding:18px 20px;position:relative;">
+    <button id="monthlyClose" class="btn btn-secondary" style="position:absolute;top:12px;right:12px;padding:4px 12px;">Close</button>
+    <h2 style="margin:0 0 2px;padding-right:90px;">Seasonal energy profile</h2>
+    <div class="hint" style="margin-top:0;">Monthly share of annual energy — ERA5 seasonal shape scaled to the GWA-based annual total.</div>
+    <div id="monthlyModalHost"></div>
+  </div>
+</div>
 <div id="waterfallModal" style="display:none;position:fixed;inset:0;background:rgba(10,14,18,0.72);z-index:2000;align-items:center;justify-content:center;padding:20px;">
   <div style="background:var(--panel,#fff);border-radius:10px;max-width:860px;width:100%;max-height:92vh;overflow:auto;padding:18px 20px;position:relative;">
     <button id="waterfallClose" class="btn btn-secondary" style="position:absolute;top:12px;right:12px;padding:4px 12px;">Close</button>
-    <h2 style="margin:0 0 2px;">Loss waterfall</h2>
+    <h2 style="margin:0 0 2px;padding-right:90px;">Loss waterfall</h2>
     <div class="hint" id="waterfallSubtitle" style="margin-top:0;"></div>
     <div id="waterfallChartHost"></div>
   </div>
@@ -808,6 +838,28 @@ function getLossInputs(){
   return vals;
 }
 document.querySelectorAll('[data-loss]').forEach(input => input.addEventListener('change', recalculate));
+
+// A11y sweep for static markup: associate visible labels with their inputs.
+document.querySelectorAll('.loss-row').forEach(row => {
+  const lbl = row.querySelector('label');
+  const input = row.querySelector('input');
+  if (lbl && input){
+    input.setAttribute('aria-label', lbl.textContent.trim());
+    if (!input.name) input.name = 'loss-' + (input.dataset.loss || '').toLowerCase();
+  }
+});
+document.querySelectorAll('.field-wrap').forEach(w => {
+  const lbl = w.querySelector('label');
+  const input = w.querySelector('input, select');
+  if (lbl && input && !input.getAttribute('aria-label')){
+    input.setAttribute('aria-label', lbl.textContent.trim());
+    if (!input.name && input.id) input.name = input.id;
+  }
+});
+[['defBenchSelect','Turbine definition model'],['loadSiteInput','Load site file']].forEach(([id, label]) => {
+  const el = document.getElementById(id);
+  if (el){ el.setAttribute('aria-label', label); if (!el.name) el.name = id; }
+});
 document.getElementById('manualAdjustment').addEventListener('change', recalculate);
 document.getElementById('overallUncertainty').addEventListener('input', () => { uncertaintyAuto = false; });
 document.getElementById('overallUncertainty').addEventListener('change', recalculate);
@@ -890,9 +942,11 @@ const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/
 // screening variable (monopile to ~40 m, jacket to ~60 m, floating beyond),
 // so these earn a base-layer slot rather than an overlay.
 const emodnetLayer = L.tileLayer('https://tiles.emodnet-bathymetry.eu/2020/baselayer/web_mercator/{z}/{x}/{y}.png', {
-  attribution: '&copy; EMODnet Bathymetry Consortium', maxZoom: 12
+  // maxNativeZoom upscales the deepest tile level instead of refusing to
+  // show the layer when zoomed in past it — selectable at any zoom.
+  attribution: '&copy; EMODnet Bathymetry Consortium', maxNativeZoom: 12, maxZoom: 19
 });
-const gebcoLayer = L.tileLayer.wms('https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?', {
+const gebcoLayer = L.tileLayer.wms('https://wms.gebco.net/mapserv?', {
   layers: 'GEBCO_LATEST', attribution: 'GEBCO Compilation Group', format: 'image/png'
 });
 const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -1107,7 +1161,10 @@ document.getElementById('fetchNeighboursBtn').addEventListener('click', async ()
       }).addTo(map);
       marker.bindTooltip(`External${nt.name ? ' · ' + nt.name : ''} · ${rotorD} m rotor${isAssumed ? ' (assumed)' : ''} — click to remove`, { direction: 'top' });
       const rec = { lat: nt.lat, lng: nt.lon, rotorD, hubHeight, assumed: isAssumed, marker };
-      marker.on('click', () => {
+      marker.on('click', (ev) => {
+        // Same guard as user-turbine markers: without it the click bubbles to
+        // the map and places a NEW turbine where the neighbour was removed.
+        L.DomEvent.stopPropagation(ev);
         marker.remove();
         externalNeighbours = externalNeighbours.filter(x => x !== rec);
         updateNeighbourResultLine(own, radiusM);
@@ -1470,6 +1527,10 @@ function makeField(labelText, value, onChange, decimals, readOnly){
   const label = document.createElement('label');
   label.textContent = labelText;
   const input = document.createElement('input');
+  // A11y: dynamic fields carry their visible label as aria-label, and a name
+  // derived from it (DevTools: 'form field should have an id or name').
+  input.setAttribute('aria-label', labelText);
+  input.name = labelText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   input.type = 'text';
   input.value = typeof value === 'number' ? value.toFixed(decimals) : value;
   if (readOnly){ input.disabled = true; input.style.opacity = '0.55'; }
@@ -2817,6 +2878,36 @@ async function pingBackend(){
 }
 pingBackend();
 
+// ---------- Sidebar / map resizer ----------
+// One handle, two behaviours: on desktop (side-by-side grid) horizontal drag
+// sets the sidebar width; on stacked mobile layout vertical drag sets the map
+// height. Pointer events unify mouse and touch.
+(function(){
+  const rz = document.getElementById('sidebarResizer');
+  const root = document.documentElement;
+  let dragging = false;
+  const isStacked = () => window.matchMedia('(max-width: 880px)').matches;
+  rz.addEventListener('pointerdown', (e) => {
+    dragging = true; rz.classList.add('dragging');
+    rz.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  rz.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    if (isStacked()){
+      const h = Math.min(Math.max(e.clientY, window.innerHeight * 0.2), window.innerHeight * 0.75);
+      root.style.setProperty('--map-h', h + 'px');
+    } else {
+      const w = Math.min(Math.max(e.clientX, 280), window.innerWidth * 0.7);
+      root.style.setProperty('--sidebar-w', w + 'px');
+    }
+    if (typeof map !== 'undefined' && map.invalidateSize) map.invalidateSize();
+  });
+  const end = (e) => { if (dragging){ dragging = false; rz.classList.remove('dragging'); } };
+  rz.addEventListener('pointerup', end);
+  rz.addEventListener('pointercancel', end);
+})();
+
 // ---------- Loss waterfall diagram ----------
 // Drawn on demand (button / before print) from the last run's aggregate rows.
 // Floating bars: blue for gross/net, amber for each loss step, value labels
@@ -2830,8 +2921,10 @@ function drawWaterfall(){
   // change the endpoint, only skip empty bars.
   const net = allRows[allRows.length - 1].remaining;
   const gross = rows[0].remaining;
-  document.getElementById('waterfallSubtitle').textContent =
-    `Gross ${Math.round(gross).toLocaleString()} MWh/yr → Net P50 ${Math.round(net).toLocaleString()} MWh/yr (${(100*net/gross).toFixed(1)}% retained)`;
+  const subtitle = `Gross ${Math.round(gross).toLocaleString()} MWh/yr → Net P50 ${Math.round(net).toLocaleString()} MWh/yr (${(100*net/gross).toFixed(1)}% retained)`;
+  document.getElementById('waterfallSubtitle').textContent = subtitle;
+  const ps = document.getElementById('waterfallPrintSubtitle');
+  if (ps) ps.textContent = subtitle;
   const n = rows.length + 1; // + explicit Net bar
   const W = Math.max(720, n * 58), H = 380;
   const mL = 62, mR = 8, mT = 14, mB = 118;
@@ -2877,6 +2970,8 @@ function drawWaterfall(){
   svg += `<text x="${xN+bw/2}" y="${mT+plotH+10}" font-size="9.5" fill="#5a6068" text-anchor="end" transform="rotate(-52 ${xN+bw/2} ${mT+plotH+10})">Net P50</text>`;
   svg += `</svg>`;
   host.innerHTML = svg;
+  const printChart = document.getElementById('waterfallPrintChart');
+  if (printChart) printChart.innerHTML = svg;
 }
 
 // ---------- Seasonal energy profile ----------
@@ -2913,6 +3008,18 @@ function renderMonthlyProfile(repSpec){
   document.getElementById('monthlyProfileHost').innerHTML = svg;
   card.style.display = 'block';
 }
+
+document.getElementById('monthlyExpandBtn').addEventListener('click', () => {
+  // Same SVG, larger canvas: viewBox scaling grows the fonts with it.
+  document.getElementById('monthlyModalHost').innerHTML = document.getElementById('monthlyProfileHost').innerHTML;
+  document.getElementById('monthlyModal').style.display = 'flex';
+});
+document.getElementById('monthlyClose').addEventListener('click', () => {
+  document.getElementById('monthlyModal').style.display = 'none';
+});
+document.getElementById('monthlyModal').addEventListener('click', (e) => {
+  if (e.target.id === 'monthlyModal') e.target.style.display = 'none';
+});
 
 document.getElementById('waterfallBtn').addEventListener('click', () => {
   drawWaterfall();
