@@ -172,6 +172,29 @@
     font-family: var(--mono); font-size: 12px; letter-spacing: 0.03em;
     padding: 8px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.18);
   }
+  @media print {
+    /* Browser Print -> Save as PDF produces a clean report: map, navigation
+       and controls hidden; Results content, waterfall and seasonal profile
+       shown in flow with a document header. */
+    #map, .tabnav, .btn, button, input, select, .checkbox-row,
+    #tab-cover, #tab-siting, #tab-neighbours, #tab-shearing, #tab-losses,
+    .wiki-top-link, #mapClickPrompt { display: none !important; }
+    .tab-panel { display: block !important; }
+    #tab-results, #tab-breakdown { display: block !important; }
+    body::before {
+      content: "Windypins — wind farm yield screening report · Rowan Goffin · windypins.netlify.app";
+      display: block; font-family: var(--mono); font-size: 11px;
+      color: #444; padding: 0 0 10px; border-bottom: 1px solid #999; margin-bottom: 14px;
+    }
+    #waterfallModal { display: block !important; position: static !important;
+      background: none !important; padding: 0 !important; }
+    #waterfallModal > div { max-width: none !important; max-height: none !important;
+      overflow: visible !important; padding: 0 !important; box-shadow: none; }
+    #monthlyProfileCard { display: block !important; }
+    .app, .sidebar { display: block !important; width: 100% !important; height: auto !important; max-height: none !important; overflow: visible !important; }
+    body { background: #fff !important; color: #111 !important; }
+    .table-scroll { overflow: visible !important; max-height: none !important; }
+  }
   @media (max-width: 880px){
     body { overflow: auto; height: auto; }
     .app { display: flex; flex-direction: column; height: auto; }
@@ -237,6 +260,7 @@
       <button class="tab-btn active" data-tab="cover">Cover</button>
       <button class="tab-btn" data-tab="siting">Siting</button>
       <button class="tab-btn" data-tab="shearing">Shearing</button>
+      <button class="tab-btn" data-tab="neighbours">Neighbours</button>
       <button class="tab-btn" data-tab="losses">Losses</button>
       <button class="tab-btn" data-tab="results">Results</button>
       <button class="tab-btn" data-tab="breakdown">Per-turbine results</button>
@@ -275,7 +299,7 @@
           <p class="desc" style="margin:10px 0 0;">Full derivations, known limitations, and roadmap: <a href="manual.html" target="_blank" rel="noopener" style="color:var(--cyan);font-weight:600;text-decoration:none;">Manual</a>.</p>
         </div>
         <div class="disclaimer">
-          <strong>Data sources.</strong> Wind: NASA POWER (MERRA-2, ~50km) / Global Wind Atlas (GWC). Terrain: Open-Elevation + simplified Jackson-Hunt correction. Map tiles: OpenStreetMap / OpenTopoMap / Esri.
+          <strong>Data sources.</strong> Wind: NASA POWER (MERRA-2, ~50km) / Global Wind Atlas (GWC). Terrain: Open-Elevation + simplified Jackson-Hunt correction. Map tiles: OpenStreetMap / OpenTopoMap / Esri. Bathymetry: EMODnet / GEBCO.
         </div>
         <div class="section">
           <details class="advanced">
@@ -398,6 +422,31 @@
       </div>
 
       <!-- LOSSES -->
+
+      <!-- NEIGHBOURS -->
+      <div class="tab-panel" id="tab-neighbours">
+        <div class="section" id="neighboursSection">
+          <h2>Neighbouring turbines</h2>
+          <div class="hint" style="margin-top:0;">Existing turbines near the site, from OpenStreetMap. They act as wake sources only (external wake, loss 1b) and produce nothing. Coverage is not guaranteed complete — verify against the map, click a grey ring to remove it.</div>
+          <div class="field-row">
+            <div class="field-wrap">
+              <label>Search radius: <span id="neighbourRadiusLabel">30</span> km</label>
+              <input type="range" id="neighbourRadiusSlider" min="5" max="50" step="5" value="30" style="width:100%;">
+            </div>
+            <div style="display:flex;align-items:flex-end;">
+              <button class="btn btn-secondary" id="fetchNeighboursBtn" style="width:100%;" disabled>Fetch neighbours</button>
+            </div>
+          </div>
+          <div class="hint" id="neighbourResultLine" style="margin-top:4px;display:none;"></div>
+          <label class="checkbox-row" id="neighbourIncludeRow" style="margin-top:6px;display:none;">
+            <input type="checkbox" id="neighbourIncludeToggle" checked>
+            Include in wake calculation (loss 1b)
+          </label>
+        </div>
+        <div class="section" id="neighbourEmptyNote">
+          <div class="hint" style="margin-top:0;">Set a site centre on the Siting tab first — the search runs around it.</div>
+        </div>
+      </div>
       <div class="tab-panel" id="tab-losses">
         <div class="section">
           <h2>Loss assumptions <a href="manual.html#6-loss-assumptions" target="_blank" rel="noopener" class="theory-link" style="margin-left:6px;">manual</a></h2>
@@ -407,7 +456,7 @@
             <h3>1 &middot; Wake effect <a href="manual.html#4-wake-model" target="_blank" rel="noopener" class="theory-link">manual</a></h3>
             <div class="loss-row"><label>1a &middot; Internal wake</label><span style="font-family:var(--mono);font-size:11px;color:var(--text-dim);">calculated</span></div>
             <div class="loss-row"><label>1b &middot; External wake (neighbouring farms)</label><div class="unit-input"><input type="text" data-loss="extWake" data-default="0.0" value="0.0"><span class="pct-sign">%</span></div></div>
-            <div class="hint" style="margin-top:0;">Wakes from farms outside this layout. 1&ndash;3% is common near existing UK clusters; 0 if isolated. Automated OSM-based estimation is planned; until then enter manually.</div>
+            <div class="hint" id="extWakeHint" style="margin-top:0;">Wakes from farms outside this layout. 1&ndash;3% is common near existing UK clusters; 0 if isolated. Fetch neighbouring turbines in the Siting tab to compute this from OpenStreetMap data, or enter manually.</div>
             <div class="loss-row"><label>1c &middot; Blockage (induction zone)</label><div class="unit-input"><input type="text" data-loss="blockage" data-default="2.0" value="2.0"><span class="pct-sign">%</span></div></div>
             <div class="hint" id="blockageHint" style="margin-top:0;">DNV documented range: 0&ndash;4% of AEP. Literature-informed placeholder, not physically modelled.</div>
           </div>
@@ -522,7 +571,15 @@
             <tbody id="exceedanceBody"></tbody>
           </table></div>
 
-          <div class="field-row" style="margin-top:16px;">
+          <div id="monthlyProfileCard" style="display:none;margin-top:14px;">
+            <h3 style="margin:0 0 2px;">Seasonal energy profile</h3>
+            <div class="hint" style="margin-top:0;">Monthly share of annual energy. ERA5 seasonal shape scaled to the GWA-based annual total — the months' relative weights, not twelve independent absolutes.</div>
+            <div id="monthlyProfileHost"></div>
+          </div>
+
+          <button class="btn btn-secondary" id="waterfallBtn" style="width:100%;margin-top:12px;">View loss waterfall diagram</button>
+
+          <div class="field-row" style="margin-top:10px;">
             <button class="btn btn-primary" id="exportReportBtn">Export full report (.txt)</button>
             <button class="btn btn-secondary" id="exportCsvBtn">Export data (.csv)</button>
           </div>
@@ -551,6 +608,14 @@
     </div>
 </div>
 
+<div id="waterfallModal" style="display:none;position:fixed;inset:0;background:rgba(10,14,18,0.72);z-index:2000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--panel,#fff);border-radius:10px;max-width:860px;width:100%;max-height:92vh;overflow:auto;padding:18px 20px;position:relative;">
+    <button id="waterfallClose" class="btn btn-secondary" style="position:absolute;top:12px;right:12px;padding:4px 12px;">Close</button>
+    <h2 style="margin:0 0 2px;">Loss waterfall</h2>
+    <div class="hint" id="waterfallSubtitle" style="margin-top:0;"></div>
+    <div id="waterfallChartHost"></div>
+  </div>
+</div>
 <script>
 // ---------- Configuration ----------
 // The backend URL is fixed at build time rather than user-editable. A visitor
@@ -819,11 +884,22 @@ const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
 const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
   attribution: 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community', maxZoom: 18
 });
+// Bathymetry base layers (v13). EMODnet: ~100 m resolution, European seas
+// only — outside coverage the tiles are empty, which is why GEBCO (global,
+// ~450 m grid, WMS) is offered alongside. Depth is the first offshore
+// screening variable (monopile to ~40 m, jacket to ~60 m, floating beyond),
+// so these earn a base-layer slot rather than an overlay.
+const emodnetLayer = L.tileLayer('https://tiles.emodnet-bathymetry.eu/2020/baselayer/web_mercator/{z}/{x}/{y}.png', {
+  attribution: '&copy; EMODnet Bathymetry Consortium', maxZoom: 12
+});
+const gebcoLayer = L.tileLayer.wms('https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?', {
+  layers: 'GEBCO_LATEST', attribution: 'GEBCO Compilation Group', format: 'image/png'
+});
 const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
   attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 19
 });
 standardLayer.addTo(map); // default
-L.control.layers({ "Standard": standardLayer, "Topo": topoLayer, "Satellite": satelliteLayer, "Dark (minimal)": darkLayer }, {}, { collapsed: false, position: 'topright' }).addTo(map);
+L.control.layers({ "Standard": standardLayer, "Topo": topoLayer, "Satellite": satelliteLayer, "Dark (minimal)": darkLayer, "Bathymetry (EMODnet, EU)": emodnetLayer, "Bathymetry (GEBCO, global)": gebcoLayer }, {}, { collapsed: false, position: 'topright' }).addTo(map);
 
 // Scale bar — spatial reference given how coarse the underlying wind grid is
 L.control.scale({ position: 'bottomleft', metric: true, imperial: false }).addTo(map);
@@ -957,7 +1033,116 @@ document.getElementById('roseRestoreBtn').addEventListener('click', () => {
   document.getElementById('roseRestoreBtn').style.display = 'none';
 });
 
+// ---------- External (neighbouring) turbines — IEC loss 1b ----------
+// Fetched on demand from OSM via the backend; never automatic. The tool may
+// compute quietly but must never DECIDE quietly: every exclusion, assumption
+// and count is printed in the result line where the user acts.
+let externalNeighbours = [];       // {lat,lng,rotorD,hubHeight,assumed,marker}
+let externalsIncluded = true;
+let externalsFetchedAt = null;
+const EXT_ASSUMED_ROTOR = 110;     // m — typical of the last ~15 years' fleet
+const EXT_ASSUMED_HH_ONSHORE = 90; // m
+const EXT_ASSUMED_HH_OFFSHORE = 100;
+
+function clearExternalNeighbours(){
+  externalNeighbours.forEach(n => { if (n.marker) n.marker.remove(); });
+  externalNeighbours = [];
+  externalsFetchedAt = null;
+  document.getElementById('neighbourResultLine').style.display = 'none';
+  document.getElementById('neighbourIncludeRow').style.display = 'none';
+}
+
+// Self-filter: exclude OSM turbines that are actually the user's own placed
+// turbines. Placement is by eye, so coordinates never match exactly — anything
+// within max(200 m, 1.5x the user turbine's rotor) of a user turbine is
+// treated as the same machine. Deliberately placing a SUBSET of a real farm
+// leaves the rest correctly counted as external.
+function isOwnTurbine(lat, lng){
+  return turbines.some(t => {
+    const spec = getTurbineSpec(t);
+    const tol = Math.max(200, 1.5 * spec.rotorD);
+    return distMetres({ lat, lng }, t) < tol;
+  });
+}
+
+document.getElementById('neighbourRadiusSlider').addEventListener('input', (e) => {
+  document.getElementById('neighbourRadiusLabel').textContent = e.target.value;
+});
+
+document.getElementById('neighbourIncludeToggle').addEventListener('change', (e) => {
+  externalsIncluded = e.target.checked;
+  recalculate();
+});
+
+document.getElementById('fetchNeighboursBtn').addEventListener('click', async () => {
+  if (!siteCentre) return;
+  const btn = document.getElementById('fetchNeighboursBtn');
+  const line = document.getElementById('neighbourResultLine');
+  btn.disabled = true; btn.textContent = 'Fetching…';
+  clearExternalNeighbours();
+  const radiusM = parseInt(document.getElementById('neighbourRadiusSlider').value, 10) * 1000;
+  try {
+    const base = API_BASE.replace(/\/$/, '');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 45000);
+    const res = await fetch(`${base}/api/nearby-turbines?lat=${siteCentre.lat}&lon=${siteCentre.lng}&radius_m=${radiusM}`, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error(`endpoint returned ${res.status}`);
+    const data = await res.json();
+    if (!data.available){
+      line.textContent = data.note || 'OpenStreetMap lookup unavailable — enter external wake manually in Losses 1b.';
+      line.style.display = 'block';
+      return;
+    }
+    const offshore = document.getElementById('offshoreToggle').checked;
+    let own = 0, assumed = 0;
+    (data.turbines || []).forEach(nt => {
+      if (isOwnTurbine(nt.lat, nt.lon)){ own++; return; }
+      const rotorD = nt.rotor_diameter_m || EXT_ASSUMED_ROTOR;
+      const hubHeight = nt.hub_height_m || (offshore ? EXT_ASSUMED_HH_OFFSHORE : EXT_ASSUMED_HH_ONSHORE);
+      const isAssumed = !nt.rotor_diameter_m || !nt.hub_height_m;
+      if (isAssumed) assumed++;
+      const marker = L.circleMarker([nt.lat, nt.lon], {
+        radius: 6, color: '#8a8f98', weight: 2, fillOpacity: 0, dashArray: '3,3'
+      }).addTo(map);
+      marker.bindTooltip(`External${nt.name ? ' · ' + nt.name : ''} · ${rotorD} m rotor${isAssumed ? ' (assumed)' : ''} — click to remove`, { direction: 'top' });
+      const rec = { lat: nt.lat, lng: nt.lon, rotorD, hubHeight, assumed: isAssumed, marker };
+      marker.on('click', () => {
+        marker.remove();
+        externalNeighbours = externalNeighbours.filter(x => x !== rec);
+        updateNeighbourResultLine(own, radiusM);
+        recalculate();
+      });
+      externalNeighbours.push(rec);
+    });
+    externalsFetchedAt = Date.now();
+    updateNeighbourResultLine(own, radiusM);
+    document.getElementById('neighbourIncludeRow').style.display = 'flex';
+    document.getElementById('neighbourIncludeToggle').checked = true;
+    externalsIncluded = true;
+    recalculate();
+  } catch (err) {
+    line.textContent = 'Neighbour lookup failed (' + err.message + '). Try again, or enter external wake manually in Losses 1b.';
+    line.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Fetch neighbours';
+  }
+});
+
+function updateNeighbourResultLine(ownCount, radiusM){
+  const line = document.getElementById('neighbourResultLine');
+  const nAssumed = externalNeighbours.filter(n => n.assumed).length;
+  line.textContent = `${externalNeighbours.length + ownCount} turbines found within ${Math.round(radiusM/1000)} km · ` +
+    `${ownCount} excluded as yours · ${externalNeighbours.length} used as external wake sources` +
+    (nAssumed ? ` · geometry assumed (${EXT_ASSUMED_ROTOR} m rotor / ${EXT_ASSUMED_HH_ONSHORE}–${EXT_ASSUMED_HH_OFFSHORE} m hub) for ${nAssumed}` : '');
+  line.style.display = 'block';
+}
+
 function setSiteCentre(lat, lng){
+  // A new site centre invalidates any fetched neighbour set (different area).
+  clearExternalNeighbours();
+  document.getElementById('neighbourEmptyNote').style.display = 'none';
+  document.getElementById('fetchNeighboursBtn').disabled = false;
   siteCentre = { lat, lng };
   if (siteCentreMarker) map.removeLayer(siteCentreMarker);
   siteCentreMarker = L.marker([lat, lng], {
@@ -1496,7 +1681,14 @@ function powerCurveKW(v, t){
   const v50 = Math.cbrt((t.ratedKW * 1000) / denom);
   const b = Math.log(0.95 / 0.05) / POWER_CURVE_TRANSITION_W;
   const p = t.ratedKW / (1 + Math.exp(-b * (v - v50)));
-  return Math.min(p, t.ratedKW);
+  // Cp clamp (v13): the sigmoid is anchored BY Cp_max (it locates v50) but its
+  // shape was not bounded by it — implied Cp peaked at 0.470 vs a declared
+  // 0.45 near v50. The clamp closes that internal inconsistency (~0.5% of
+  // gross on an offshore Weibull). NB it does NOT close the larger ~+5.5%
+  // validation gap, which is curve SHAPE above the Cp peak (sigmoid holds max
+  // Cp through 9-12 m/s where real Cp declines) — see manual §13a.
+  const cpLimitKW = 0.5 * POWER_CURVE_RHO * area * cp * Math.pow(v, 3) / 1000;
+  return Math.min(p, t.ratedKW, cpLimitKW);
 }
 
 function aepMWh(A, k, t){
@@ -1618,6 +1810,72 @@ function gaussianDeficit(x, y, dz, D0, kStar, Ct){
   return C * Math.exp(-(y * y + dz * dz) / (2 * sigma * sigma));
 }
 
+// ---------- Blockage (loss 1c) — vortex-cylinder induction, decision support ----------
+// Closed-form centreline induction upstream of an actuator disc (Branlard &
+// Meyer Forsting): u/U = 1 - a·(1 - x/sqrt(x²+R²)) at upstream distance x,
+// with a = (1-sqrt(1-Ct))/2. Lateral falloff approximated as Gaussian with
+// sigma = R. Linear superposition across the fleet (exact for ideal vortex
+// cylinders). Energy impact via the cubic linearisation dE/E ≈ 3·du/u —
+// valid for the small deficits involved (<2%), and cheaper than a third
+// full AEP integration pass.
+//
+// This captures ROTOR-INDUCED blockage only. Measured offshore blockage
+// (Bleeg 2018, 2-4% of AEP) includes an atmospheric/global component this
+// cannot represent, so the result is a physically-grounded LOWER BOUND. It is
+// displayed beside loss 1c for the user to adopt — never auto-applied.
+const BLOCKAGE_CT = 0.8;
+function computeBlockagePct(){
+  if (!roseData || turbines.length < 2) return null;
+  const { sectorAngles, freqs } = roseData;
+  const a = (1 - Math.sqrt(1 - BLOCKAGE_CT)) / 2;
+  let fleetDeficit = 0;
+  turbines.forEach(ti => {
+    const iSpec = getTurbineSpec(ti);
+    let tDef = 0;
+    sectorAngles.forEach((sectorBearing, s) => {
+      const freqFrac = freqs[s] / 100;
+      let secDef = 0;
+      turbines.forEach(tj => {
+        if (tj.id === ti.id) return;
+        const jSpec = getTurbineSpec(tj);
+        const R = jSpec.rotorD / 2;
+        const brg = bearingBetween(ti, tj);
+        const d = distMetres(ti, tj);
+        if (d < R || d > 6000) return; // induction is negligible beyond ~50D
+        const delta = (brg - sectorBearing) * Math.PI / 180;
+        const x = d * Math.cos(delta);   // + means tj is toward where wind goes: tj DOWNWIND of ti
+        if (x <= 0) return;               // only downwind rotors induce upstream deficit at ti
+        const y = Math.abs(d * Math.sin(delta));
+        const axial = a * (1 - x / Math.sqrt(x * x + R * R));
+        secDef += axial * Math.exp(-(y * y) / (2 * R * R));
+      });
+      tDef += freqFrac * secDef;
+    });
+    fleetDeficit += tDef;
+  });
+  const meanDeficit = fleetDeficit / turbines.length;
+  return Math.min(meanDeficit * 3 * 100, 4.0); // cubic linearisation, capped at DNV band top
+}
+
+function updateBlockageHint(){
+  const hint = document.getElementById('blockageHint');
+  if (!hint) return;
+  const pct = computeBlockagePct();
+  if (pct === null){
+    hint.innerHTML = 'DNV documented range: 0&ndash;4% of AEP. Set a site centre for a calculated estimate.';
+    return;
+  }
+  hint.innerHTML = `DNV documented range: 0&ndash;4% of AEP. <strong>Calculated: ${pct.toFixed(2)}%</strong> ` +
+    `(vortex-cylinder, rotor induction only &mdash; a lower bound; excludes atmospheric blockage) ` +
+    `<a href="#" id="applyBlockageLink" style="color:var(--accent);">apply</a>`;
+  const link = document.getElementById('applyBlockageLink');
+  if (link) link.onclick = (e) => {
+    e.preventDefault();
+    const input = document.querySelector('[data-loss="blockage"]');
+    if (input){ input.value = pct.toFixed(2); recalculate(); }
+  };
+}
+
 // Fallback for when no site centre / rose data is set yet: worst-case
 // omnidirectional treatment — every neighbour is assumed directly upwind on
 // the wake centreline simultaneously, combined RSS. Deliberately conservative;
@@ -1650,14 +1908,18 @@ function wakeDeficitFor(turbine, others, rotorD, offshoreMode){
 // binning, so no discontinuities from small turbine moves.
 const WAKE_SUB_BEARINGS = [-0.4, -0.2, 0, 0.2, 0.4]; // fractions of sector width
 
-function directionWeightedAEP(turbinePos, allTurbines, turbineSpec, offshoreMode, terrainSpeedupFraction, z0){
+function directionWeightedAEP(turbinePos, allTurbines, turbineSpec, offshoreMode, terrainSpeedupFraction, z0, extraWakeSources){
   const { sectorAngles, weibullA, weibullK, freqs } = roseData;
   const sectorWidth = 360 / sectorAngles.length;
   const terrainFactor = 1 + (terrainSpeedupFraction || 0);
   let grossPower = 0, wakeAdjustedPower = 0, meanWind = 0;
 
-  // Pre-resolve neighbour geometry once (specs, bearings, distances)
-  const neighbours = allTurbines
+  // Pre-resolve neighbour geometry once (specs, bearings, distances).
+  // extraWakeSources (external/OSM turbines) enter the SAME wake mathematics
+  // as fleet turbines — they just never produce energy. A generic modern spec
+  // stands in for their Ct knee; wake deficit is only weakly sensitive to it.
+  const EXT_KNEE_SPEC = { ratedKW: 3000, rotorD: EXT_ASSUMED_ROTOR, cpMax: 0.45 };
+  const internalN = allTurbines
     .filter(o => o.id !== turbinePos.id)
     .map(o => {
       const oSpec = getTurbineSpec(o);
@@ -1671,6 +1933,19 @@ function directionWeightedAEP(turbinePos, allTurbines, turbineSpec, offshoreMode
       };
     })
     .filter(n => n.d >= n.D0 * 0.5);
+  const externalN = (extraWakeSources || [])
+    .map(o => ({
+      bearing: bearingBetween(turbinePos, o),
+      d: distMetres(turbinePos, o),
+      D0: o.rotorD,
+      dz: o.hubHeight - turbineSpec.hubHeight,
+      kStar: wakeGrowthRate(o.hubHeight, offshoreMode, z0).kStar,
+      vKnee: ctKneeSpeed({ ...EXT_KNEE_SPEC, rotorD: o.rotorD })
+    }))
+    // Beyond ~25 km an individual Gaussian wake contributes nothing; skip the
+    // geometry for those pairs rather than evaluating a zero.
+    .filter(n => n.d >= n.D0 * 0.5 && n.d < 25000);
+  const neighbours = internalN.concat(externalN);
 
   sectorAngles.forEach((sectorBearing, s) => {
     const A = weibullA[s] * terrainFactor, k = weibullK[s], freqFrac = freqs[s] / 100;
@@ -1744,7 +2019,7 @@ async function fetchIAV(lat, lng){
     if (!res.ok) throw new Error('era5 endpoint error');
     const data = await res.json();
     iavData = { annualMeans: data.annual_means_100m, nYears: data.n_years, source: 'era5' };
-    era5Stats = { icing: data.icing, hysteresis: data.hysteresis, nYears: data.n_years };
+    era5Stats = { icing: data.icing, hysteresis: data.hysteresis, nYears: data.n_years, monthly: data.monthly_mean_100m || null };
     updateEra5Hints();
   } catch (err) {
     clearTimeout(timeout);
@@ -1794,6 +2069,16 @@ function updateEra5Hints(){
   }
 }
 document.getElementById('offshoreToggle').addEventListener('change', updateEra5Hints);
+// Offshore cluster wakes are detectable further out — default the neighbour
+// search radius accordingly, but only before a fetch (don't yank a set the
+// user is already looking at).
+document.getElementById('offshoreToggle').addEventListener('change', (e) => {
+  if (!externalsFetchedAt){
+    const v = e.target.checked ? 50 : 30;
+    document.getElementById('neighbourRadiusSlider').value = v;
+    document.getElementById('neighbourRadiusLabel').textContent = v;
+  }
+});
 
 // Open any Advanced <details> whose input has been edited away from its
 // default, so a loaded or hand-edited value is never hidden.
@@ -1803,6 +2088,25 @@ function openAdvancedWithEdits(){
       parseFloat(inp.value) !== parseFloat(inp.dataset.default || '0'));
     if (edited) det.open = true;
   });
+}
+
+// When external neighbours are fetched and included, loss 1b is computed
+// through the wake model and the manual input is superseded — shown disabled
+// with the computed value, restored the moment neighbours are cleared or
+// excluded. The input's own value is preserved underneath.
+function updateExtWakeInputState(computedPct){
+  const input = document.querySelector('[data-loss="extWake"]');
+  const hint = document.getElementById('extWakeHint');
+  if (!input) return;
+  if (computedPct !== null && computedPct !== undefined){
+    input.disabled = true;
+    input.style.opacity = '0.55';
+    hint.innerHTML = `<strong>Calculated: ${computedPct.toFixed(2)}%</strong> — from ${externalNeighbours.length} neighbouring turbines via the wake model (see Siting tab). Manual entry is disabled while neighbours are included.`;
+  } else {
+    input.disabled = false;
+    input.style.opacity = '';
+    hint.textContent = 'Wakes from farms outside this layout. 1\u20133% is common near existing UK clusters; 0 if isolated. Fetch neighbouring turbines in the Siting tab to compute this from OpenStreetMap data, or enter manually.';
+  }
 }
 
 // Detrended energy coefficient of variation (%) for the current fleet.
@@ -1864,6 +2168,7 @@ async function recalculate(){
   const offshoreMode = document.getElementById('offshoreToggle').checked;
   const useDirectionWeighted = roseData !== null;
   const perTurbine = [];
+  let sumExtWakeAep = 0; // MWh lost to external wake (loss 1b), density-corrected
   let anyLive = false, anyFallback = false;
 
   for (const pos of turbines){
@@ -1875,7 +2180,19 @@ async function recalculate(){
       // Real methodology: per-sector Weibull data + direction-aware wake, weighted by actual sector frequency.
       // Terrain speed-up scales wind speed (the A parameter, inside directionWeightedAEP); air density scales
       // power output directly — these are physically different corrections, applied at the right stage each.
+      // Two passes when external neighbours are active: internal-only gives
+      // loss 1a; internal+external gives the total, and 1b is the difference.
+      // Computing them separately keeps the waterfall's 1a/1b split honest
+      // instead of burying externals inside "wake".
+      const exts = (externalsIncluded && externalNeighbours.length) ? externalNeighbours : null;
       const result = directionWeightedAEP(pos, turbines, t, offshoreMode, terrainSpeedup, shear.z0);
+      let extWakeFrac = 0;
+      if (exts){
+        const rTot = directionWeightedAEP(pos, turbines, t, offshoreMode, terrainSpeedup, shear.z0, exts);
+        // Fraction of the INTERNALLY-waked energy lost additionally to externals
+        extWakeFrac = result.wakeAdjustedAep > 0 ? Math.max(0, 1 - rTot.wakeAdjustedAep / result.wakeAdjustedAep) : 0;
+        sumExtWakeAep += result.wakeAdjustedAep * extWakeFrac * densityRatio;
+      }
       result.grossAep *= densityRatio;
       result.wakeAdjustedAep *= densityRatio;
       perTurbine.push({ ...result, ratedKW: t.ratedKW });
@@ -1909,7 +2226,8 @@ async function recalculate(){
   function buildStages(wakePct){
     return [
       { label: '1a Internal wake', pct: wakePct },
-      { label: '1b External wake', pct: lossVals.extWake },
+      { label: '1b External wake', pct: (window._computedExtWakePct !== null && window._computedExtWakePct !== undefined)
+          ? window._computedExtWakePct : lossVals.extWake },
       { label: '1c Blockage', pct: lossVals.blockage },
       { label: '2a Turbine availability', pct: lossVals.turbineAvailability },
       { label: '2b Balance of plant', pct: lossVals.bopAvailability },
@@ -1946,8 +2264,18 @@ async function recalculate(){
 
   // Aggregate waterfall (for the Results tab)
   let totalGross = 0, totalWakeAdjusted = 0, totalRatedKW = 0;
+  // Aggregate 1b: external-wake energy (density-corrected inside the loop),
+  // expressed below as % of internally-waked energy so it slots into the
+  // waterfall AFTER 1a exactly as the multiplicative sequence expects.
   perTurbine.forEach(p => { totalGross += p.grossAep; totalWakeAdjusted += p.wakeAdjustedAep; totalRatedKW += p.ratedKW; });
   const overallWakePct = totalGross > 0 ? (1 - totalWakeAdjusted / totalGross) * 100 : 0;
+  // 1b as % of post-1a energy (totalWakeAdjusted is internal-only wake result)
+  const computedExtWakePct = (externalsIncluded && externalNeighbours.length && totalWakeAdjusted > 0)
+    ? (sumExtWakeAep / totalWakeAdjusted) * 100 : null;
+  window._computedExtWakePct = computedExtWakePct;
+  updateExtWakeInputState(computedExtWakePct);
+  updateBlockageHint();
+  renderMonthlyProfile(perTurbine.length ? getTurbineSpec(turbines[0]) : null);
   const aggregate = runWaterfall(totalGross, overallWakePct);
   const totalNet = aggregate.net;
   // Net CF exposed for the 4b hysteresis hint (deadband hours are at rated
@@ -2488,6 +2816,116 @@ async function pingBackend(){
   }
 }
 pingBackend();
+
+// ---------- Loss waterfall diagram ----------
+// Drawn on demand (button / before print) from the last run's aggregate rows.
+// Floating bars: blue for gross/net, amber for each loss step, value labels
+// on every bar — the standard consultancy EYA presentation.
+function drawWaterfall(){
+  const host = document.getElementById('waterfallChartHost');
+  if (!lastResults || !lastResults.aggregateWaterfall){ host.innerHTML = '<div class="hint">Run an analysis first.</div>'; return; }
+  const allRows = lastResults.aggregateWaterfall;
+  const rows = allRows.filter(r => r.label === 'Gross' || Math.abs(r.pct || 0) > 0.001);
+  // Net from the UNFILTERED final row — filtering zero-pct stages must not
+  // change the endpoint, only skip empty bars.
+  const net = allRows[allRows.length - 1].remaining;
+  const gross = rows[0].remaining;
+  document.getElementById('waterfallSubtitle').textContent =
+    `Gross ${Math.round(gross).toLocaleString()} MWh/yr → Net P50 ${Math.round(net).toLocaleString()} MWh/yr (${(100*net/gross).toFixed(1)}% retained)`;
+  const n = rows.length + 1; // + explicit Net bar
+  const W = Math.max(720, n * 58), H = 380;
+  const mL = 62, mR = 8, mT = 14, mB = 118;
+  const plotW = W - mL - mR, plotH = H - mT - mB;
+  const yMin = Math.max(0, net - (gross - net) * 0.25);
+  const y = v => mT + plotH * (1 - (v - yMin) / (gross - yMin));
+  const bw = plotW / n * 0.72;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;font-family:var(--mono);" role="img" aria-label="Loss waterfall from gross to net energy">`;
+  // y gridlines
+  for (let i = 0; i <= 4; i++){
+    const v = yMin + (gross - yMin) * i / 4;
+    svg += `<line x1="${mL}" x2="${W-mR}" y1="${y(v)}" y2="${y(v)}" stroke="#d8dce1" stroke-width="1"/>`;
+    svg += `<text x="${mL-6}" y="${y(v)+3}" text-anchor="end" font-size="10" fill="#7a8088">${Math.round(v/1000).toLocaleString()}k</text>`;
+  }
+  svg += `<text x="12" y="${mT+plotH/2}" font-size="10" fill="#7a8088" transform="rotate(-90 12 ${mT+plotH/2})" text-anchor="middle">MWh/yr</text>`;
+  let running = gross;
+  rows.forEach((r, i) => {
+    const x = mL + plotW * (i + 0.14) / n;
+    let top, bot, fill, valTxt;
+    if (i === 0){ top = y(gross); bot = y(yMin); fill = '#2f6fb2'; valTxt = Math.round(gross).toLocaleString(); }
+    else {
+      const before = running; running = r.remaining;
+      // A negative-pct stage (manual adjustment entered as a gain) raises the
+      // running value: draw upward in green rather than an inverted bar.
+      const hi = Math.max(before, running), lo = Math.min(before, running);
+      top = y(hi); bot = y(lo);
+      fill = r.pct >= 0 ? '#c2622f' : '#2e8b57';
+      valTxt = `${r.pct >= 0 ? '−' : '+'}${Math.abs(r.pct).toFixed(Math.abs(r.pct) < 1 ? 2 : 1)}%`;
+    }
+    svg += `<rect x="${x}" y="${top}" width="${bw}" height="${Math.max(bot-top,2)}" rx="2" fill="${fill}"/>`;
+    svg += `<text x="${x+bw/2}" y="${top-4}" text-anchor="middle" font-size="10" fill="#3a4048">${valTxt}</text>`;
+    const lbl = r.label.length > 20 ? r.label.slice(0, 19) + '…' : r.label;
+    svg += `<text x="${x+bw/2}" y="${mT+plotH+10}" font-size="9.5" fill="#5a6068" text-anchor="end" transform="rotate(-52 ${x+bw/2} ${mT+plotH+10})">${lbl}</text>`;
+    if (i > 0){ // MWh impact under the pct, inside bar if tall enough
+      const h = bot - top;
+      if (h > 26) svg += `<text x="${x+bw/2}" y="${(top+bot)/2+3}" text-anchor="middle" font-size="9" fill="#fff">−${Math.round(r.impact/1000)}k</text>`;
+    }
+  });
+  // Net bar
+  const xN = mL + plotW * (rows.length + 0.14) / n;
+  svg += `<rect x="${xN}" y="${y(net)}" width="${bw}" height="${Math.max(y(yMin)-y(net),2)}" rx="2" fill="#2f6fb2"/>`;
+  svg += `<text x="${xN+bw/2}" y="${y(net)-4}" text-anchor="middle" font-size="10" fill="#3a4048">${Math.round(net).toLocaleString()}</text>`;
+  svg += `<text x="${xN+bw/2}" y="${mT+plotH+10}" font-size="9.5" fill="#5a6068" text-anchor="end" transform="rotate(-52 ${xN+bw/2} ${mT+plotH+10})">Net P50</text>`;
+  svg += `</svg>`;
+  host.innerHTML = svg;
+}
+
+// ---------- Seasonal energy profile ----------
+// Each month's ERA5 mean wind -> Weibull(k=2) -> representative-spec energy;
+// bars show each month's SHARE of the annual total. Using shares (not
+// absolutes) is deliberate: ERA5 supplies seasonal shape, GWA supplies level.
+function renderMonthlyProfile(repSpec){
+  const card = document.getElementById('monthlyProfileCard');
+  if (!era5Stats || !era5Stats.monthly || era5Stats.monthly.some(v => v === null) || !repSpec){
+    card.style.display = 'none';
+    return;
+  }
+  const energies = era5Stats.monthly.map(m => {
+    const { A, k } = weibullParamsFromMean(Math.max(m, 0.5), 2.0);
+    return expectedPowerKW(A, k, repSpec);
+  });
+  const tot = energies.reduce((s, x) => s + x, 0);
+  if (tot <= 0){ card.style.display = 'none'; return; }
+  const pct = energies.map(e => 100 * e / tot);
+  const names = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  const W = 640, H = 150, mL = 30, mB = 18, mT = 14;
+  const plotW = W - mL - 8, plotH = H - mT - mB;
+  const maxP = Math.max(...pct);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;font-family:var(--mono);" role="img" aria-label="Monthly share of annual energy">`;
+  pct.forEach((p, i) => {
+    const bw = plotW / 12 * 0.7;
+    const x = mL + plotW * (i + 0.15) / 12;
+    const h = plotH * p / maxP;
+    svg += `<rect x="${x}" y="${mT + plotH - h}" width="${bw}" height="${Math.max(h,1)}" rx="2" fill="#2f6fb2"/>`;
+    svg += `<text x="${x+bw/2}" y="${mT + plotH - h - 3}" text-anchor="middle" font-size="9" fill="#5a6068">${p.toFixed(1)}</text>`;
+    svg += `<text x="${x+bw/2}" y="${H-5}" text-anchor="middle" font-size="9.5" fill="#7a8088">${names[i]}</text>`;
+  });
+  svg += `<text x="8" y="${mT+plotH/2}" font-size="9" fill="#7a8088" transform="rotate(-90 8 ${mT+plotH/2})" text-anchor="middle">% of yr</text></svg>`;
+  document.getElementById('monthlyProfileHost').innerHTML = svg;
+  card.style.display = 'block';
+}
+
+document.getElementById('waterfallBtn').addEventListener('click', () => {
+  drawWaterfall();
+  document.getElementById('waterfallModal').style.display = 'flex';
+});
+document.getElementById('waterfallClose').addEventListener('click', () => {
+  document.getElementById('waterfallModal').style.display = 'none';
+});
+document.getElementById('waterfallModal').addEventListener('click', (e) => {
+  if (e.target.id === 'waterfallModal') e.target.style.display = 'none';
+});
+// Ensure the chart exists (and is current) when printing, even if never opened.
+window.addEventListener('beforeprint', drawWaterfall);
 
 document.getElementById('exportReportBtn').addEventListener('click', () => {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
