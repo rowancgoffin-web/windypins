@@ -564,7 +564,7 @@
 
           <h2 style="margin-top:16px;">Per-turbine</h2>
           <div class="table-scroll"><table class="results-table">
-            <thead><tr><th>Turbine</th><th>Wind<br>m/s</th><th>Gross<br>MWh/yr</th><th>Wake<br>loss</th><th>Net<br>MWh/yr</th></tr></thead>
+            <thead><tr><th>Turbine</th><th>Wind<br>m/s</th><th>Gross<br>MWh/yr</th><th>Internal<br>wake</th><th>Net<br>MWh/yr</th></tr></thead>
             <tbody id="resultsTableBody"></tbody>
           </table></div>
 
@@ -632,7 +632,7 @@
 
 <div id="monthlyModal" style="display:none;position:fixed;inset:0;background:rgba(10,14,18,0.72);z-index:2000;align-items:center;justify-content:center;padding:20px;">
   <div style="background:var(--panel,#fff);border-radius:10px;max-width:860px;width:100%;max-height:92vh;overflow:auto;padding:18px 20px;position:relative;">
-    <button id="monthlyClose" class="btn btn-secondary" style="position:absolute;top:12px;right:12px;padding:4px 12px;">Close</button>
+    <button id="monthlyClose" class="btn btn-secondary" style="position:absolute;top:12px;right:12px;padding:4px 12px;width:auto;">Close</button>
     <h2 style="margin:0 0 2px;padding-right:90px;">Seasonal energy profile</h2>
     <div class="hint" style="margin-top:0;">Monthly share of annual energy — ERA5 seasonal shape scaled to the GWA-based annual total.</div>
     <div id="monthlyModalHost"></div>
@@ -640,7 +640,7 @@
 </div>
 <div id="waterfallModal" style="display:none;position:fixed;inset:0;background:rgba(10,14,18,0.72);z-index:2000;align-items:center;justify-content:center;padding:20px;">
   <div style="background:var(--panel,#fff);border-radius:10px;max-width:860px;width:100%;max-height:92vh;overflow:auto;padding:18px 20px;position:relative;">
-    <button id="waterfallClose" class="btn btn-secondary" style="position:absolute;top:12px;right:12px;padding:4px 12px;">Close</button>
+    <button id="waterfallClose" class="btn btn-secondary" style="position:absolute;top:12px;right:12px;padding:4px 12px;width:auto;">Close</button>
     <h2 style="margin:0 0 2px;padding-right:90px;">Loss waterfall</h2>
     <div class="hint" id="waterfallSubtitle" style="margin-top:0;"></div>
     <div id="waterfallChartHost"></div>
@@ -862,6 +862,7 @@ document.querySelectorAll('.field-wrap').forEach(w => {
 });
 document.getElementById('manualAdjustment').addEventListener('change', recalculate);
 document.getElementById('overallUncertainty').addEventListener('input', () => { uncertaintyAuto = false; });
+document.querySelector('[data-loss="blockage"]').addEventListener('input', () => { blockageAuto = false; });
 document.getElementById('overallUncertainty').addEventListener('change', recalculate);
 document.getElementById('iavInput').addEventListener('input', () => { iavAuto = false; });
 document.getElementById('iavInput').addEventListener('change', recalculate);
@@ -954,6 +955,54 @@ const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x
 });
 standardLayer.addTo(map); // default
 L.control.layers({ "Standard": standardLayer, "Topo": topoLayer, "Satellite": satelliteLayer, "Dark (minimal)": darkLayer, "Bathymetry (EMODnet, EU)": emodnetLayer, "Bathymetry (GEBCO, global)": gebcoLayer }, {}, { collapsed: false, position: 'topright' }).addTo(map);
+
+// Approximate depth legend, shown only while a bathymetry base layer is
+// active. The two services use similar but not identical palettes, hence
+// "approx." — this is orientation, not a data readout.
+// Zoom-to-site: one click recovers from being panned anywhere in the world.
+// Fits the fleet (plus fetched neighbours) or falls back to the site centre.
+const zoomToSite = L.control({ position: 'topleft' });
+zoomToSite.onAdd = function(){
+  const div = L.DomUtil.create('div', 'leaflet-bar');
+  const a = L.DomUtil.create('a', '', div);
+  a.href = '#';
+  a.title = 'Zoom to wind farm';
+  a.setAttribute('aria-label', 'Zoom to wind farm');
+  a.style.cssText = 'font-size:15px;line-height:26px;text-align:center;';
+  a.textContent = '\u2316';
+  L.DomEvent.on(a, 'click', (e) => {
+    L.DomEvent.stop(e);
+    const pts = turbines.map(t => [t.lat, t.lng])
+      .concat(externalNeighbours.map(n => [n.lat, n.lng]));
+    if (pts.length >= 2){
+      map.fitBounds(L.latLngBounds(pts).pad(0.2));
+    } else if (pts.length === 1){
+      map.setView(pts[0], 12);
+    } else if (siteCentre){
+      map.setView([siteCentre.lat, siteCentre.lng], 11);
+    }
+    // Nothing placed and no centre: nothing sensible to zoom to — no-op.
+  });
+  return div;
+};
+zoomToSite.addTo(map);
+
+const bathyLegend = L.control({ position: 'bottomleft' });
+bathyLegend.onAdd = function(){
+  const div = L.DomUtil.create('div');
+  div.style.cssText = 'background:rgba(255,255,255,0.92);border:1px solid #d6dbe1;border-radius:6px;padding:7px 10px;font:10.5px var(--mono);color:#3a4048;box-shadow:0 1px 4px rgba(0,0,0,0.12);';
+  div.innerHTML = 'Depth, approx. (m)' +
+    '<div style="width:170px;height:10px;margin:5px 0 3px;border-radius:2px;' +
+    'background:linear-gradient(to right,#d9f0f7,#a6d8ea,#6fb6dc,#3f8fc5,#2b6ca3,#1c4a7e,#0d2b55);"></div>' +
+    '<div style="display:flex;justify-content:space-between;"><span>0</span><span>1000</span><span>3000</span><span>5000+</span></div>';
+  return div;
+};
+let bathyLegendOn = false;
+map.on('baselayerchange', (e) => {
+  const isBathy = e.layer === emodnetLayer || e.layer === gebcoLayer;
+  if (isBathy && !bathyLegendOn){ bathyLegend.addTo(map); bathyLegendOn = true; }
+  else if (!isBathy && bathyLegendOn){ map.removeControl(bathyLegend); bathyLegendOn = false; }
+});
 
 // Scale bar — spatial reference given how coarse the underlying wind grid is
 L.control.scale({ position: 'bottomleft', metric: true, imperial: false }).addTo(map);
@@ -1885,6 +1934,10 @@ function gaussianDeficit(x, y, dz, D0, kStar, Ct){
 // cannot represent, so the result is a physically-grounded LOWER BOUND. It is
 // displayed beside loss 1c for the user to adopt — never auto-applied.
 const BLOCKAGE_CT = 0.8;
+// Auto-apply: the computed figure is written into the 1c input on every
+// recalculation until the user edits the field, which hands control back to
+// them (same pattern as overall uncertainty). Their value is never fought.
+let blockageAuto = true;
 function computeBlockagePct(){
   if (!roseData || turbines.length < 2) return null;
   const { sectorAngles, freqs } = roseData;
@@ -1922,19 +1975,31 @@ function updateBlockageHint(){
   const hint = document.getElementById('blockageHint');
   if (!hint) return;
   const pct = computeBlockagePct();
+  const input = document.querySelector('[data-loss="blockage"]');
   if (pct === null){
     hint.innerHTML = 'DNV documented range: 0&ndash;4% of AEP. Set a site centre for a calculated estimate.';
     return;
   }
-  hint.innerHTML = `DNV documented range: 0&ndash;4% of AEP. <strong>Calculated: ${pct.toFixed(2)}%</strong> ` +
-    `(vortex-cylinder, rotor induction only &mdash; a lower bound; excludes atmospheric blockage) ` +
-    `<a href="#" id="applyBlockageLink" style="color:var(--accent);">apply</a>`;
-  const link = document.getElementById('applyBlockageLink');
-  if (link) link.onclick = (e) => {
-    e.preventDefault();
-    const input = document.querySelector('[data-loss="blockage"]');
-    if (input){ input.value = pct.toFixed(2); recalculate(); }
-  };
+  if (blockageAuto && input && parseFloat(input.value) !== parseFloat(pct.toFixed(2))){
+    input.value = pct.toFixed(2);
+    // The changed value feeds this recalculation via getLossInputs — no
+    // re-entrant recalculate() needed.
+  }
+  if (blockageAuto){
+    hint.innerHTML = `<strong>Calculated and applied: ${pct.toFixed(2)}%</strong> ` +
+      `(vortex-cylinder, rotor induction only &mdash; a lower bound; excludes atmospheric blockage). ` +
+      `DNV documented range 0&ndash;4%. Edit the field to take over manually.`;
+  } else {
+    hint.innerHTML = `DNV documented range: 0&ndash;4% of AEP. <strong>Calculated: ${pct.toFixed(2)}%</strong> ` +
+      `(rotor induction only &mdash; lower bound) &mdash; manual value in use. ` +
+      `<a href="#" id="applyBlockageLink" style="color:var(--accent);">re-apply calculated</a>`;
+    const link = document.getElementById('applyBlockageLink');
+    if (link) link.onclick = (e) => {
+      e.preventDefault();
+      blockageAuto = true;
+      if (input){ input.value = pct.toFixed(2); recalculate(); }
+    };
+  }
 }
 
 // Fallback for when no site centre / rose data is set yet: worst-case
@@ -2614,7 +2679,7 @@ function generateReportText(){
   lines.push(line());
   lines.push(`  Total installed capacity: ${r.totalCapacityMW.toFixed(1)} MW (${r.turbineCount} turbine${r.turbineCount === 1 ? '' : 's'})`);
   lines.push(`  Gross annual energy:     ${r.totalGross.toFixed(0)} MWh/yr`);
-  lines.push(`  Wake loss (calculated):  ${r.overallWakePct.toFixed(1)}%`);
+  lines.push(`  Internal wake loss (calculated): ${r.overallWakePct.toFixed(1)}%`);
   lines.push(`  Net annual energy (P50): ${r.totalNet.toFixed(0)} MWh/yr`);
   lines.push(`  Capacity factor (net):   ${r.capFactor.toFixed(1)}%`);
   lines.push('');
@@ -2797,6 +2862,10 @@ document.getElementById('loadSiteInput').addEventListener('change', async (e) =>
         const input = document.querySelector(`[data-loss="${key}"]`);
         if (input) input.value = val;
       });
+      // Same principle as uncertainty below: a value restored from file is a
+      // deliberate choice — auto-blockage must not clobber it on the next
+      // recalculation. The re-apply link in the 1c hint restores auto mode.
+      if (state.lossVals.blockage !== undefined) blockageAuto = false;
       openAdvancedWithEdits();
     }
     if (state.manualAdj !== undefined) document.getElementById('manualAdjustment').value = state.manualAdj;
@@ -3056,12 +3125,12 @@ function generateCsvText(){
   rows.push(['Total turbines', r.turbineCount]);
   rows.push(['Total capacity (MW)', r.totalCapacityMW.toFixed(1)]);
   rows.push(['Gross AEP (MWh/yr)', r.totalGross.toFixed(0)]);
-  rows.push(['Wake loss (%)', r.overallWakePct.toFixed(1)]);
+  rows.push(['Internal wake loss (%)', r.overallWakePct.toFixed(1)]);
   rows.push(['Net AEP P50 (MWh/yr)', r.totalNet.toFixed(0)]);
   rows.push(['Net capacity factor (%)', r.capFactor.toFixed(1)]);
   rows.push([]);
   rows.push(['PER-TURBINE']);
-  rows.push(['Turbine', 'Latitude', 'Longitude', 'Model', 'Hub height (m)', 'Cp_max', 'Mean wind (m/s)', 'Gross (MWh/yr)', 'Wake loss (%)', 'Net (MWh/yr)']);
+  rows.push(['Turbine', 'Latitude', 'Longitude', 'Model', 'Hub height (m)', 'Cp_max', 'Mean wind (m/s)', 'Gross (MWh/yr)', 'Internal wake loss (%)', 'Net (MWh/yr)']);
   r.turbines.forEach((t, i) => {
     const wf = r.perTurbineWaterfalls[i];
     const p = wf ? wf.rows : null;
