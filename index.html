@@ -3,8 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Screening-level wind turbine energy yield estimator — reanalysis wind data, Weibull power-curve integration, direction-weighted wake modelling, and a DNV/IEC-style loss waterfall.">
-<title>Windypins — Wind Farm Yield Screening</title>
+<meta name="description" content="Free browser-based wind farm energy yield calculator and turbine siting tool. Click-to-place turbines, Global Wind Atlas resource, Gaussian wake modelling, IEC 61400-15-2 losses, uncertainty and P90 — validated against operating wind farms.">
+<title>Windypins — Free Wind Farm Yield Calculator &amp; Turbine Siting Tool</title>
+<link rel="canonical" href="https://windypins.netlify.app/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://windypins.netlify.app/">
+<meta property="og:title" content="Windypins — Free Wind Farm Yield Calculator &amp; Turbine Siting Tool">
+<meta property="og:description" content="Click-to-place wind farm screening in the browser: real wind atlas data, wake modelling, IEC loss waterfall, uncertainty and P90. Free, no login, methodology fully documented.">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Windypins",
+  "url": "https://windypins.netlify.app/",
+  "applicationCategory": "EngineeringApplication",
+  "operatingSystem": "Any (browser-based)",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" },
+  "description": "Browser-based wind farm energy yield screening tool: turbine siting on a map, Global Wind Atlas resource data, Bastankhah-Porté-Agel wake modelling, IEC 61400-15-2 loss framework, uncertainty and exceedance (P50/P75/P90). Validated against operating wind farms; methodology publicly documented.",
+  "author": { "@type": "Person", "name": "Rowan Goffin" }
+}
+</script>
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1.6" fill="%23b5650d"/><path d="M12 12 L12 3.5 C15 3.5 16.5 6 15.2 8.8 Z" fill="%23b5650d"/><path d="M12 12 L19.5 15.5 C18.3 18.2 15.2 19 13.2 16.8 Z" fill="%230e7f92"/><path d="M12 12 L6 17 C4 14.7 4.8 11.4 7.8 10.6 Z" fill="%23c0392b"/><line x1="12" y1="12" x2="12" y2="21" stroke="%238a94a3" stroke-width="1.4"/></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1208,7 +1227,10 @@ document.getElementById('fetchNeighboursBtn').addEventListener('click', async ()
       const marker = L.circleMarker([nt.lat, nt.lon], {
         radius: 6, color: '#8a8f98', weight: 2, fillOpacity: 0, dashArray: '3,3'
       }).addTo(map);
-      marker.bindTooltip(`External${nt.name ? ' · ' + nt.name : ''} · ${rotorD} m rotor${isAssumed ? ' (assumed)' : ''} — click to remove`, { direction: 'top' });
+      // OSM names are third-party-editable and Leaflet renders tooltip strings
+      // as HTML — escape to close the XSS path.
+      const safeName = nt.name ? String(nt.name).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) : '';
+      marker.bindTooltip(`External${safeName ? ' · ' + safeName : ''} · ${rotorD} m rotor${isAssumed ? ' (assumed)' : ''} — click to remove`, { direction: 'top' });
       const rec = { lat: nt.lat, lng: nt.lon, rotorD, hubHeight, assumed: isAssumed, marker };
       marker.on('click', (ev) => {
         // Same guard as user-turbine markers: without it the click bubbles to
