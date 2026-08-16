@@ -352,8 +352,8 @@
         <div class="section">
           <h2>Site centre</h2>
           <div class="field-row" style="margin-bottom:8px;">
-            <button class="btn btn-primary" id="setSiteCentreBtn">Click to set site centre</button>
-            <button class="btn btn-secondary" id="centroidBtn">Use turbine centroid</button>
+            <button class="btn btn-primary" id="centroidBtn">Use turbine centroid</button>
+            <button class="btn btn-secondary" id="setSiteCentreBtn">Click to set site centre</button>
           </div>
           <div class="hint" id="siteCentreCoords" style="margin-top:0;">Not set</div>
           <div class="hint" id="siteCentreWarning" style="margin-top:0;color:var(--red);display:none;"></div>
@@ -466,6 +466,7 @@
             <div class="field-wrap">
               <label>Search radius: <span id="neighbourRadiusLabel">30</span> km</label>
               <input type="range" id="neighbourRadiusSlider" min="5" max="50" step="5" value="30" style="width:100%;">
+              <div class="hint" style="margin:2px 0 0;">5 km steps. Beyond roughly 20 km an individual wake has decayed to nothing, so wider searches mainly add map context for checking OpenStreetMap coverage rather than changing the calculated loss.</div>
             </div>
             <div style="display:flex;align-items:flex-end;">
               <button class="btn btn-secondary" id="fetchNeighboursBtn" style="width:100%;" disabled>Fetch neighbours</button>
@@ -607,9 +608,9 @@
 
           <div id="monthlyProfileCard" style="display:none;margin-top:14px;">
             <h3 style="margin:0 0 2px;">Seasonal energy profile</h3>
-            <div class="hint" style="margin-top:0;">Monthly share of annual energy. ERA5 seasonal shape scaled to the GWA-based annual total — the months' relative weights, not twelve independent absolutes.</div>
+            <div class="hint" id="monthlyProfileDesc" style="margin-top:0;">Monthly share of annual energy. ERA5 seasonal shape scaled to the GWA-based annual total — the months' relative weights, not twelve independent absolutes.</div>
             <div id="monthlyProfileHost"></div>
-            <button class="btn btn-secondary" id="monthlyExpandBtn" style="width:100%;margin-top:6px;">Expand seasonal profile</button>
+            <button class="btn btn-secondary" id="monthlyExpandBtn" style="width:100%;margin-top:6px;">View seasonal profile</button>
           </div>
 
           <div id="waterfallPrintHost" class="print-only">
@@ -1403,7 +1404,17 @@ document.getElementById('fetchNeighboursBtn').addEventListener('click', runNeigh
 function updateNeighbourResultLine(ownCount, radiusM){
   const line = document.getElementById('neighbourResultLine');
   const nAssumed = externalNeighbours.filter(n => n.assumed).length;
-  line.textContent = `${externalNeighbours.length + ownCount} turbines found within ${Math.round(radiusM/1000)} km · ` +
+  const km = Math.round(radiusM / 1000);
+  if (externalNeighbours.length === 0){
+    // A successful search that finds nothing is a result, not a failure —
+    // say so plainly rather than printing three zeros.
+    line.textContent = ownCount > 0
+      ? `No neighbouring turbines within ${km} km. The ${ownCount} found are your own layout. External wake is zero for this site.`
+      : `No turbines found within ${km} km. External wake is zero for this site.`;
+    line.style.display = 'block';
+    return;
+  }
+  line.textContent = `${externalNeighbours.length + ownCount} turbines found within ${km} km · ` +
     `${ownCount} excluded as yours · ${externalNeighbours.length} used as external wake sources` +
     (nAssumed ? ` · geometry assumed (${EXT_ASSUMED_ROTOR} m rotor / ${EXT_ASSUMED_HH_ONSHORE}–${EXT_ASSUMED_HH_OFFSHORE} m hub) for ${nAssumed}` : '');
   line.style.display = 'block';
@@ -2283,7 +2294,8 @@ let iavData = null;      // { annualMeans, nYears } once fetched
 let iavFetchedFor = null; // cache key of last fetch to avoid refetch loops
 let iavAuto = true, uncertaintyAuto = true;
 
-let era5Stats = null; // { icing, hysteresis, nYears } from /api/era5-resource
+let era5Stats = null; // { icing, hysteresis, nYears, monthly } from /api/era5-resource
+let era5Failure = null; // human-readable reason, so a silent fallback is visible
 
 async function fetchIAV(lat, lng){
   const key = `${Math.round(lat * 4) / 4}_${Math.round(lng * 4) / 4}`;
@@ -2305,10 +2317,14 @@ async function fetchIAV(lat, lng){
     const data = await res.json();
     iavData = { annualMeans: data.annual_means_100m, nYears: data.n_years, source: 'era5' };
     era5Stats = { icing: data.icing, hysteresis: data.hysteresis, nYears: data.n_years, monthly: data.monthly_mean_100m || null };
+    era5Failure = data.monthly_mean_100m ? null : 'the backend returned no monthly data (older backend version?)';
     updateEra5Hints();
   } catch (err) {
     clearTimeout(timeout);
     era5Stats = null;
+    era5Failure = err && err.name === 'AbortError'
+      ? 'the request timed out (the backend may have been asleep — try again in a moment)'
+      : `the request failed (${err && err.message ? err.message : 'unknown error'})`;
     // Fallback: original NASA POWER monthly-derived IAV.
     try {
       const c2 = new AbortController();
@@ -2386,7 +2402,9 @@ function updateExtWakeInputState(computedPct){
   if (computedPct !== null && computedPct !== undefined){
     input.disabled = true;
     input.style.opacity = '0.55';
-    hint.innerHTML = `<strong>Calculated: ${computedPct.toFixed(2)}%</strong> — from ${externalNeighbours.length} neighbouring turbines via the wake model (see Siting tab). Manual entry is disabled while neighbours are included.`;
+    hint.innerHTML = externalNeighbours.length
+      ? `<strong>Calculated: ${computedPct.toFixed(2)}%</strong> — from ${externalNeighbours.length} neighbouring turbines via the wake model (see the Neighbours tab). Manual entry is disabled while neighbours are included.`
+      : `<strong>Calculated: 0.00%</strong> — the Neighbours search found no turbines within the search radius, so there is no external wake to apply. Untick "include" on the Neighbours tab to enter a value manually.`;
   } else {
     input.disabled = false;
     input.style.opacity = '';
@@ -2555,8 +2573,13 @@ async function recalculate(){
   perTurbine.forEach(p => { totalGross += p.grossAep; totalWakeAdjusted += p.wakeAdjustedAep; totalRatedKW += p.ratedKW; });
   const overallWakePct = totalGross > 0 ? (1 - totalWakeAdjusted / totalGross) * 100 : 0;
   // 1b as % of post-1a energy (totalWakeAdjusted is internal-only wake result)
-  const computedExtWakePct = (externalsIncluded && externalNeighbours.length && totalWakeAdjusted > 0)
-    ? (sumExtWakeAep / totalWakeAdjusted) * 100 : null;
+  // A successful fetch is evidence either way: neighbours found gives a
+  // computed 1b, none found gives a computed ZERO. Only an un-fetched (or
+  // excluded) state leaves 1b to manual entry, so a stale hand-typed value
+  // cannot survive a search that confirmed there is nothing nearby.
+  const computedExtWakePct = (externalsIncluded && externalsFetchedAt)
+    ? ((externalNeighbours.length && totalWakeAdjusted > 0) ? (sumExtWakeAep / totalWakeAdjusted) * 100 : 0)
+    : null;
   window._computedExtWakePct = computedExtWakePct;
   updateExtWakeInputState(computedExtWakePct);
   updateBlockageHint();
@@ -3206,12 +3229,41 @@ function drawWaterfall(){
 // Each month's ERA5 mean wind -> Weibull(k=2) -> representative-spec energy;
 // bars show each month's SHARE of the annual total. Using shares (not
 // absolutes) is deliberate: ERA5 supplies seasonal shape, GWA supplies level.
+// Returns the reason the seasonal data is unusable, or null when it is fine.
+// Shared by the card, the modal and the print block so all three agree.
+function monthlyUnavailableReason(){
+  if (!era5Stats || !era5Stats.monthly) return era5Failure || 'the ERA5 statistics request has not completed yet';
+  if (era5Stats.monthly.some(v => v === null)) return 'the ERA5 record returned incomplete months for this location';
+  return null;
+}
+
 function renderMonthlyProfile(repSpec){
   const card = document.getElementById('monthlyProfileCard');
-  if (!era5Stats || !era5Stats.monthly || era5Stats.monthly.some(v => v === null) || !repSpec){
+  const host = document.getElementById('monthlyProfileHost');
+  const desc = document.getElementById('monthlyProfileDesc');
+  // No turbines sited: nothing to show at all.
+  if (!repSpec){
     card.style.display = 'none';
     return;
   }
+  card.style.display = 'block';
+
+  // The card, its description and the button are always present once turbines
+  // exist — the feature is advertised, so it must never look absent. When the
+  // data is missing the chart area stays empty and the explanation lives in
+  // the modal, reached by the same button.
+  const reason = monthlyUnavailableReason();
+  if (reason){
+    // Empty on screen (the modal explains), but printed reports state the
+    // absence explicitly — a silently dropped section reads as a broken
+    // document, and the reader cannot ask a follow-up question of paper.
+    host.innerHTML = `<div class="print-only hint" style="margin:6px 0 0;">Not available for this run: ${reason}.</div>`;
+    // Neutral phrasing so the same sentence reads correctly on screen (where
+    // the button is the obvious next step) and on paper (where it is not).
+    desc.textContent = 'Monthly share of annual energy — not available for this run.';
+    return;
+  }
+  desc.textContent = "Monthly share of annual energy. ERA5 seasonal shape scaled to the GWA-based annual total — the months' relative weights, not twelve independent absolutes.";
   const energies = era5Stats.monthly.map(m => {
     const { A, k } = weibullParamsFromMean(Math.max(m, 0.5), 2.0);
     return expectedPowerKW(A, k, repSpec);
@@ -3238,8 +3290,21 @@ function renderMonthlyProfile(repSpec){
 }
 
 document.getElementById('monthlyExpandBtn').addEventListener('click', () => {
-  // Same SVG, larger canvas: viewBox scaling grows the fonts with it.
-  document.getElementById('monthlyModalHost').innerHTML = document.getElementById('monthlyProfileHost').innerHTML;
+  const modalHost = document.getElementById('monthlyModalHost');
+  const reason = monthlyUnavailableReason();
+  if (reason){
+    // Explain rather than open an empty box. Same button either way, so the
+    // feature is always reachable and the failure is always accounted for.
+    modalHost.innerHTML = `<div class="hint" style="margin:10px 0 0;">` +
+      `<strong>No seasonal data for this run.</strong> The profile is built from ERA5 hourly reanalysis ` +
+      `fetched through the backend, and ${reason}.<br><br>` +
+      `The same request supplies interannual variability, icing screening and high-wind hysteresis, so those ` +
+      `fall back to their defaults too. The backend can be slow to wake after a quiet period — moving the site ` +
+      `centre slightly triggers a fresh attempt.</div>`;
+  } else {
+    // Same SVG, larger canvas: viewBox scaling grows the fonts with it.
+    modalHost.innerHTML = document.getElementById('monthlyProfileHost').innerHTML;
+  }
   document.getElementById('monthlyModal').style.display = 'flex';
 });
 document.getElementById('monthlyClose').addEventListener('click', () => {
