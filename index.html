@@ -382,11 +382,11 @@
           <button class="btn btn-secondary btn-danger" id="clearBtn" style="display:none;margin-bottom:12px;">Clear all turbines</button>
 
           <div class="turbine-card" id="defBenchCard" style="display:none;">
-            <div class="hint" style="margin-top:0;margin-bottom:8px;"><strong>Turbine definition</strong> — build a spec here and apply it to every sited turbine at once. Editing any field turns the definition Custom.</div>
+            <div class="hint" style="margin-top:0;margin-bottom:8px;"><strong>Turbine definition</strong>: build a spec here and apply it to every sited turbine at once. Editing any field turns it Custom.</div>
             <select id="defBenchSelect"></select>
             <div id="defBenchFields"></div>
             <button class="btn btn-primary" id="defBenchApplyBtn" style="margin-top:10px;width:100%;">Apply to all sited turbines</button>
-            <div class="hint" style="margin-top:6px;margin-bottom:0;">Overwrites every sited turbine's spec with this definition (they all become Custom). Turbine positions are unchanged. The definition stays here after applying, so you can tweak and re-apply.</div>
+            <div class="hint" style="margin-top:6px;margin-bottom:0;">Overwrites every sited turbine's spec (they all become Custom). Positions are unchanged, and the definition stays here so you can tweak and re-apply.</div>
           </div>
 
           <div id="turbineCards"></div>
@@ -461,12 +461,12 @@
       <div class="tab-panel" id="tab-neighbours">
         <div class="section" id="neighboursSection">
           <h2>Neighbouring turbines</h2>
-          <div class="hint" style="margin-top:0;">Existing turbines near the site, from OpenStreetMap. They act as wake sources only (external wake, loss 1b) and produce nothing. Coverage is not guaranteed complete — verify against the map, click a grey ring to remove it.</div>
+          <div class="hint" style="margin-top:0;">Existing turbines near the site, from OpenStreetMap. They act as wake sources only (external wake, loss 1b). Coverage is not guaranteed complete: check against the map, click a grey ring to remove one.</div>
           <div class="field-row">
             <div class="field-wrap">
               <label>Search radius: <span id="neighbourRadiusLabel">30</span> km</label>
               <input type="range" id="neighbourRadiusSlider" min="5" max="50" step="5" value="30" style="width:100%;">
-              <div class="hint" style="margin:2px 0 0;">5 km steps. Beyond roughly 20 km an individual wake has decayed to nothing, so wider searches mainly add map context for checking OpenStreetMap coverage rather than changing the calculated loss.</div>
+              <div class="hint" style="margin:2px 0 0;">Beyond roughly 20 km a wake has decayed to nothing, so wider searches add map context more than calculated loss.</div>
             </div>
             <div style="display:flex;align-items:flex-end;">
               <button class="btn btn-secondary" id="fetchNeighboursBtn" style="width:100%;" disabled>Fetch neighbours</button>
@@ -2309,7 +2309,10 @@ async function fetchIAV(lat, lng){
   // smoothing at an upland site; GWA remains the resource path.
   // First uncached call does 4 chunked 5-year ERA5 fetches server-side: slow.
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 75000);
+  // 120 s: four chunked ERA5 fetches server-side, possibly on a cold instance.
+  // A timeout here is not wasted work: the backend completes and caches the
+  // result anyway, so a second attempt at the same site returns immediately.
+  const timeout = setTimeout(() => controller.abort(), 120000);
   try {
     const res = await fetch(`${base}/api/era5-resource?lat=${lat}&lon=${lng}`, { signal: controller.signal });
     clearTimeout(timeout);
