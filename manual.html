@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Full methodology for the Windypins wind farm yield calculator: wind resource data sources, Gaussian wake model, IEC 61400-15-2 loss framework, uncertainty, validation against operating wind farms, and known limitations.">
-<title>Methodology Manual — Windypins Wind Farm Yield Calculator</title>
+<meta name="description" content="Full methodology for the WindyPins wind farm yield calculator: wind resource data sources, Gaussian wake model, IEC 61400-15-2 loss framework, uncertainty, validation against operating wind farms, and known limitations.">
+<title>Methodology Manual — WindyPins Wind Farm Yield Calculator</title>
 <link rel="canonical" href="https://windypins.netlify.app/manual.html">
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1.6" fill="%23b5650d"/><path d="M12 12 L12 3.5 C15 3.5 16.5 6 15.2 8.8 Z" fill="%23b5650d"/><path d="M12 12 L19.5 15.5 C18.3 18.2 15.2 19 13.2 16.8 Z" fill="%230e7f92"/><path d="M12 12 L6 17 C4 14.7 4.8 11.4 7.8 10.6 Z" fill="%23c0392b"/><line x1="12" y1="12" x2="12" y2="21" stroke="%238a94a3" stroke-width="1.4"/></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -94,7 +94,7 @@
   <div class="brand">
     <button class="menu-toggle" id="menuToggle" aria-label="Toggle contents menu"><span></span></button>
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><circle cx="12" cy="12" r="1.6" fill="#b5650d"/><path d="M12 12 L12 3.5 C15 3.5 16.5 6 15.2 8.8 Z" fill="#b5650d" opacity="0.8"/><path d="M12 12 L19.5 15.5 C18.3 18.2 15.2 19 13.2 16.8 Z" fill="#0e7f92" opacity="0.8"/><path d="M12 12 L6 17 C4 14.7 4.8 11.4 7.8 10.6 Z" fill="#c0392b" opacity="0.8"/><line x1="12" y1="12" x2="12" y2="21" stroke="#8a94a3" stroke-width="1.4"/></svg>
-    <div><div class="eyebrow">Wind farm yield screening &middot; Rowan Goffin</div><h1>Windypins — Manual</h1></div>
+    <div><div class="eyebrow">Wind farm yield screening &middot; Rowan Goffin</div><h1>WindyPins — Manual</h1></div>
   </div>
   <div class="header-actions">
     <a href="index.html" class="backlink">← Back to the tool</a>
@@ -136,7 +136,7 @@
 <a href="#16-roadmap">16. Roadmap</a>
 </nav>
 <article>
-<h1 id="turbine-yield-estimator-manual"><a class="headline-anchor" href="#turbine-yield-estimator-manual">Windypins — Manual</a></h1>
+<h1 id="turbine-yield-estimator-manual"><a class="headline-anchor" href="#turbine-yield-estimator-manual">WindyPins — Manual</a></h1>
 <p>This manual describes the data sources, formulas, and approximations used to calculate annual energy production (AEP), section by section.</p>
 <hr />
 <h2 id="1-scope"><a class="headline-anchor" href="#1-scope">1. Scope</a></h2>
@@ -260,10 +260,10 @@ C(x)    = 1 − √(1 − Ct / (8(σ/D₀)²))
 <p>The underlying data pipeline covers open water: NASA POWER includes ocean grid points, and reanalysis wind quality over water benefits from assimilated satellite scatterometer and altimeter observations.</p>
 <ul>
 <li><strong>Wake decay constant</strong> — toggleable, 0.04 offshore vs 0.075 onshore (§4).</li>
-<li><strong>Turbine library</strong> — includes two offshore-scale classes (8.0 MW · 167 m rotor, 9.5 MW · 164 m rotor; §13).</li>
+<li><strong>Turbine library</strong> — includes eight offshore classes spanning 3.6 MW to 20 MW (up to a 260 m rotor; §13).</li>
 <li><strong>Shear</strong> — offshore shear is typically lower and flatter (α ≈ 0.10–0.12) than onshore; adjustable in the Shearing tab but not defaulted differently by mode.</li>
 <li><strong>Blockage</strong> — DNV's research found blockage affects both onshore and offshore projects, with magnitude driven by turbine/layout characteristics rather than the onshore/offshore distinction; the same editable loss category applies to both.</li>
-<li><strong>Not modelled</strong> — array losses specific to 50–100+ turbine offshore farms, foundation/marine O&amp;M cost structures, bathymetry or seabed constraints.</li>
+<li><strong>Not modelled</strong> — array losses specific to 50–100+ turbine offshore farms, foundation/marine O&amp;M cost structures, and seabed constraints. Water depth is available as an EMODnet/GEBCO map layer for visual screening, but does not enter any calculation.</li>
 <li><strong>Map tiles</strong> — all available basemaps render open water without issue.</li>
 </ul>
 <hr />
@@ -453,6 +453,78 @@ C(x)    = 1 − √(1 − Ct / (8(σ/D₀)²))
 <td>164m</td>
 <td>105m</td>
 </tr>
+<tr>
+<td>0.85 MW · 52 m rotor</td>
+<td>Generic</td>
+<td>Onshore</td>
+<td>0.85 MW</td>
+<td>52m</td>
+<td>50m</td>
+</tr>
+<tr>
+<td>2.3 MW · 100 m rotor</td>
+<td>Generic</td>
+<td>Onshore</td>
+<td>2.3 MW</td>
+<td>100m</td>
+<td>80m</td>
+</tr>
+<tr>
+<td>5.6 MW · 162 m rotor</td>
+<td>Generic</td>
+<td>Onshore</td>
+<td>5.6 MW</td>
+<td>162m</td>
+<td>125m</td>
+</tr>
+<tr>
+<td>6.0 MW · 170 m rotor</td>
+<td>Generic</td>
+<td>Onshore</td>
+<td>6.0 MW</td>
+<td>170m</td>
+<td>135m</td>
+</tr>
+<tr>
+<td>6.0 MW · 154 m rotor</td>
+<td>Generic</td>
+<td>Offshore</td>
+<td>6.0 MW</td>
+<td>154m</td>
+<td>102m</td>
+</tr>
+<tr>
+<td>11 MW · 200 m rotor</td>
+<td>Generic</td>
+<td>Offshore</td>
+<td>11 MW</td>
+<td>200m</td>
+<td>135m</td>
+</tr>
+<tr>
+<td>14 MW · 222 m rotor</td>
+<td>Generic</td>
+<td>Offshore</td>
+<td>14 MW</td>
+<td>222m</td>
+<td>145m</td>
+</tr>
+<tr>
+<td>15 MW · 236 m rotor</td>
+<td>Generic</td>
+<td>Offshore</td>
+<td>15 MW</td>
+<td>236m</td>
+<td>150m</td>
+</tr>
+<tr>
+<td>20 MW · 260 m rotor</td>
+<td>Generic</td>
+<td>Offshore</td>
+<td>20 MW</td>
+<td>260m</td>
+<td>160m</td>
+</tr>
 </tbody>
 </table>
 <p>Rated power, rotor diameter, typical hub height, and cut-in/cut-out wind speeds are drawn from public manufacturer specifications and industry references. Nameplate "rated wind speed" is retained for reference but does not govern the power curve shape (§13a). Manufacturer power-curve tables are not available in machine-readable form — they are published only as graphics inside proprietary datasheet documents — so curve shape is approximated per §13a rather than digitized.</p>
@@ -467,9 +539,10 @@ C(x)    = 1 − √(1 − Ct / (8(σ/D₀)²))
 <li><code>P(v) = ratedKW / (1 + exp(−b·(v − v50)))</code>, clipped to <code>[0, ratedKW]</code>, to <code>[v_cutin, v_cutout]</code>, and (v13) to the Cp-limited available power <code>½ρA·Cp_max·v³</code> at every speed.</li>
 <li><code>b</code> sets the transition width, chosen so the curve moves from 5% to 95% of rated power over a ±3 m/s window around <code>v50</code>.</li>
 </ol>
-<p><code>Cp_max = 0.45</code> is applied fleet-wide as a single maximum power coefficient, within the literature-typical range for modern turbines (approximately 0.45–0.48, against a 0.593 Betz limit; Manwell, McGowan &amp; Rogers, <em>Wind Energy Explained</em>), rather than a per-model tuned figure — no verified per-model curve data was available to calibrate against individually. Cp_max is user-editable per turbine, including a bulk "set for all sited turbines" control, for calibration against known site or fleet performance data.</p>
+<p><code>Cp_max = 0.45</code> is applied fleet-wide as a single maximum power coefficient, within the literature-typical range for modern turbines (approximately 0.45–0.48, against a 0.593 Betz limit; Manwell, McGowan &amp; Rogers, <em>Wind Energy Explained</em>), rather than a per-model tuned figure — no verified per-model curve data was available to calibrate against individually. Cp_max is user-editable per turbine, and the turbine definition bench (§13) can stamp one specification onto every sited turbine at once, for calibration against known site or fleet performance data.</p>
 <p><strong>Cp bound (v13).</strong> Cp_max anchors the sigmoid (it locates v50) but in earlier versions did not bound its shape: around v50 the implied power coefficient overshot the declared ceiling, peaking at 0.470 against a configured 0.45 for the 3.6&nbsp;MW/120&nbsp;m class. From v13, output is clamped to the Cp-limited available power at every speed, so the parameter means what its name says. Quantified honestly, this consistency fix is worth only ~0.5% of gross on an offshore Weibull: the overshoot above the declared ceiling occupies a narrow speed band. The larger validation discrepancy (~+5.5% of gross against London Array) arises mostly from curve <em>shape</em>, not the ceiling &mdash; the sigmoid holds near maximum Cp through 9&ndash;12&nbsp;m/s where real machines' Cp is already declining toward rated. That remains a documented limitation; the candidate fix is a Cp roll-off above the aerodynamic peak, which is a curve redesign requiring its own validation pass rather than a clamp.</p>
-<p><strong>Cross-checks.</strong> Reproducing a UK onshore farm's published net capacity factor (Braes of Doune, 36 × 2.0 MW/80 m machines, 22.5%) with this curve, a wake loss consistent with actual turbine spacing, and the standard loss waterfall implies a hub-height mean wind speed of approximately 6.9 m/s, consistent with the location. A UK offshore farm (London Array, 175 × 3.6 MW/120 m machines), using the default Cp_max = 0.45 without adjustment, produced a net capacity factor of 37.6% against a published multi-year average of 38–40%. Applying one Cp_max to turbine generations of different vintage (2004 and 2012, in these two cases) is an approximation; these results indicate it is usable as a default, not that it is precise for any individual model.</p>
+<p><strong>Cross-checks.</strong> Two operating UK wind farms are used as references, both run with the default Cp_max = 0.45 and the standard loss waterfall, and both using real turbine positions imported from OpenStreetMap: London Array (175 × 3.6 MW / 120 m, offshore) and Braes of Doune (36 × 2.0 MW / 80 m, upland onshore). Both land within a few percentage points of published capacity factors, reading somewhat high in each case. The residual is consistent with the power-curve shape limitation described above, and at the upland site with the Global Wind Atlas being optimistic over Scottish high ground.</p>
+<p>Comparisons of this kind need care over the basis. Published capacity factors are generally quoted after curtailment and against settled output, whereas this tool estimates energy at the turbine with only its own modest default curtailment allowance. Braes of Doune illustrates the point: public figures put its curtailment losses at roughly 15% of potential generation, so its headline capacity factor sits several points below the pre-curtailment quantity the tool is actually estimating. These are screening-level sanity checks rather than a calibration exercise — no parameter has been tuned to match either site, and applying a single Cp_max across turbine generations of different vintage remains an approximation.</p>
 <p>Custom turbines expose fully editable rated power, rotor diameter, cut-in/cut-out wind speeds, hub height, and Cp_max.</p>
 <hr />
 <h2 id="14-reproducibility"><a class="headline-anchor" href="#14-reproducibility">14. Reproducibility</a></h2>
@@ -477,6 +550,11 @@ C(x)    = 1 − √(1 − Ct / (8(σ/D₀)²))
 <p>Residual (small, legitimate) sources of run-to-run variation: upstream data providers occasionally update their datasets (NASA POWER climatology revisions, GWA version updates, Open-Elevation source changes), so results may shift slightly across months. Within a session and across save/reload cycles against unchanged upstream data, results are deterministic.</p>
 <h2 id="15-change-log"><a class="headline-anchor" href="#15-change-log">15. Change log</a></h2>
 <p>Technical summary of substantive changes, most recent first. UI-only tweaks omitted.</p>
+<p><strong>v13.1</strong>
+- Turbine library expanded from 10 to 19 generic classes, covering community-scale machines (0.85&nbsp;MW / 52&nbsp;m) through the current onshore fleet (up to 6.0&nbsp;MW / 170&nbsp;m) and offshore from 3.6&nbsp;MW to 20&nbsp;MW / 260&nbsp;m, including the 6, 11 and 14&nbsp;MW classes common in operating and under-construction projects. Cp<sub>max</sub> stays at the validated 0.45 throughout rather than a higher assumed value for the larger machines. Model dropdowns are now grouped by siting type and sorted by rating.
+- Neighbour import reliability: four Overpass mirrors with a staggered timeout budget, one automatic retry, an explicit retry control, staged progress feedback during the wait, and the existing neighbour set is now preserved when a re-fetch fails rather than being cleared first.
+- Backend memory: the ERA5 handler now reduces per-year, per-month, icing and mean-wind statistics chunk by chunk instead of holding temperature, humidity and timestamp arrays for the whole 20-year record, cutting peak allocation per request by around a third. Concurrent ERA5 fetches are capped at two, and cache ceilings reduced. Arithmetic is unchanged: all fourteen result fields verified identical to the previous version.
+- Map layer control collapses to an icon on phone-sized screens.</p>
 <p><strong>v13.0</strong>
 - Neighbouring turbines moved to a dedicated tab (fetch, radius, result line, include toggle), decongesting Siting.
 - Bathymetry base layers: EMODnet (~100 m, European seas, with global background at low zoom) and GEBCO (global, ~450 m) selectable in the map layer control, with an approximate depth legend while active — water depth is the first offshore screening variable.
@@ -489,7 +567,7 @@ C(x)    = 1 − √(1 − Ct / (8(σ/D₀)²))
 - Backend CORS extended for Netlify deploy previews and GitHub Pages staging, enabling free preview-based testing under Netlify's credit-based deploy model.
 - NEWA evaluated as a candidate resource source; deferred pending a two-farm probe (&sect;16).</p>
 <p><strong>v12.0</strong>
-- Renamed Windypins; author byline added.
+- Renamed WindyPins; author byline added.
 - Loss waterfall restructured to the IEC 61400-15-2 framework: six numbered categories with sub-items (1a&ndash;7), rarely-adjusted sub-items behind per-category Advanced disclosures that auto-open when edited, and exact backward compatibility for pre-v12 save files via a schema marker (§6).
 - ERA5 hourly statistics added (Open-Meteo archive route — no registration, no CDS queue): per-site interannual variability from 20 years of annual means, an IEA-Task-19-style icing screening criterion, and a chronological high-wind hysteresis count, offshore-valid only (§2a, §6a). NASA POWER monthly IAV retained as automatic fallback.
 - ERA5 explicitly rejected as a resource baseline after two-farm validation (+9% London Array, &minus;16% Braes of Doune on implied wind speed — terrain smoothing at ~31 km); GWA remains the resource path, with the division of labour documented (§2a).
@@ -529,7 +607,7 @@ C(x)    = 1 − √(1 − Ct / (8(σ/D₀)²))
 <li>Wake-added turbulence for deep-array recovery &mdash; the validated ~1&ndash;2&nbsp;pp wake residual at London Array; the mechanism TurbOPark-class models add.</li>
 <li>Power-curve Cp roll-off above the aerodynamic peak &mdash; the shape correction behind most of the remaining ~+5% gross error at London Array (&sect;13a); requires its own two-farm validation.</li>
 <li>Direction-dependent (sectoral) roughness rose in place of a single global value.</li>
-<li>Wake-added turbulence for deep-array effects; manufacturer thrust curves in place of the analytic Ct(v) roll-off.</li>
+<li>Manufacturer thrust curves in place of the analytic Ct(v) roll-off.</li>
 <li>Digitized manufacturer power curves in place of the Cp-based approximation in §13a. (ERA5 as a resource replacement was on this list; tested and rejected — see §2a.)</li>
 </ul>
 </article>

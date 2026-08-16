@@ -4,18 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Free browser-based wind farm energy yield calculator and turbine siting tool. Click-to-place turbines, Global Wind Atlas resource, Gaussian wake modelling, IEC 61400-15-2 losses, uncertainty and P90 — validated against operating wind farms.">
-<title>Windypins — Free Wind Farm Yield Calculator &amp; Turbine Siting Tool</title>
+<title>WindyPins — Free Wind Farm Yield Calculator &amp; Turbine Siting Tool</title>
 <link rel="canonical" href="https://windypins.netlify.app/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://windypins.netlify.app/">
-<meta property="og:title" content="Windypins — Free Wind Farm Yield Calculator &amp; Turbine Siting Tool">
+<meta property="og:title" content="WindyPins — Free Wind Farm Yield Calculator &amp; Turbine Siting Tool">
 <meta property="og:description" content="Click-to-place wind farm screening in the browser: real wind atlas data, wake modelling, IEC loss waterfall, uncertainty and P90. Free, no login, methodology fully documented.">
 <meta name="twitter:card" content="summary">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "name": "Windypins",
+  "name": "WindyPins",
   "url": "https://windypins.netlify.app/",
   "applicationCategory": "EngineeringApplication",
   "operatingSystem": "Any (browser-based)",
@@ -210,7 +210,7 @@
     .tab-panel { display: block !important; }
     #tab-results, #tab-breakdown { display: block !important; }
     body::before {
-      content: "Windypins — wind farm yield screening report · Rowan Goffin · windypins.netlify.app";
+      content: "WindyPins — wind farm yield screening report · Rowan Goffin · windypins.netlify.app";
       display: block; font-family: var(--mono); font-size: 11px;
       color: #444; padding: 0 0 10px; border-bottom: 1px solid #999; margin-bottom: 14px;
     }
@@ -280,7 +280,7 @@
         </svg>
         <div>
           <div class="eyebrow">Wind resource screening</div>
-          <h1 style="margin:2px 0 0;">Windypins</h1>
+          <h1 style="margin:2px 0 0;">WindyPins</h1>
           <div style="font-size:11px;color:var(--text-dim);margin-top:1px;">Wind farm yield screening &middot; Rowan Goffin</div>
         </div>
       </div>
@@ -344,7 +344,7 @@
             </div>
           </details>
         </div>
-        <div class="version-line">Windypins v12.0 · July 2026 · Rowan Goffin · screening tool — not a bankable assessment</div>
+        <div class="version-line">WindyPins v12.0 · July 2026 · Rowan Goffin · screening tool — not a bankable assessment</div>
       </div>
 
       <!-- SITING -->
@@ -747,6 +747,50 @@ const TURBINES = {
   vestas_v164_9p5: {
     name: "9.5 MW · 164 m rotor", manufacturer: "Generic", type: "offshore",
     ratedKW: 9500, rotorD: 164, hubHeight: 105, vCutIn: 4, vRated: 13.5, vCutOut: 25, cpMax: 0.45
+  },
+  // Small and mid onshore classes, for community-scale sites and repowering
+  // studies where the existing machines are 1990s-2000s vintage.
+  g_0p85_52: {
+    name: "0.85 MW · 52 m rotor", manufacturer: "Generic", type: "onshore",
+    ratedKW: 850, rotorD: 52, hubHeight: 50, vCutIn: 4, vRated: 16, vCutOut: 25, cpMax: 0.45
+  },
+  g_2p3_100: {
+    name: "2.3 MW · 100 m rotor", manufacturer: "Generic", type: "onshore",
+    ratedKW: 2300, rotorD: 100, hubHeight: 80, vCutIn: 3, vRated: 12.5, vCutOut: 25, cpMax: 0.45
+  },
+  // Offshore classes between the 3.6 MW mid-2010s fleet and the 15 MW machines:
+  // 6 MW is the workhorse of operating UK farms, 11 MW and 14 MW cover projects
+  // currently in construction.
+  g_6p0_154: {
+    name: "6.0 MW · 154 m rotor", manufacturer: "Generic", type: "offshore",
+    ratedKW: 6000, rotorD: 154, hubHeight: 102, vCutIn: 4, vRated: 13, vCutOut: 25, cpMax: 0.45
+  },
+  g_11_200: {
+    name: "11 MW · 200 m rotor", manufacturer: "Generic", type: "offshore",
+    ratedKW: 11000, rotorD: 200, hubHeight: 135, vCutIn: 3, vRated: 12.5, vCutOut: 25, cpMax: 0.45
+  },
+  g_14_222: {
+    name: "14 MW · 222 m rotor", manufacturer: "Generic", type: "offshore",
+    ratedKW: 14000, rotorD: 222, hubHeight: 145, vCutIn: 3, vRated: 12, vCutOut: 25, cpMax: 0.45
+  },
+  // Current-generation machines. Cp_max stays at the validated 0.45 rather
+  // than a higher guess; hub heights follow the usual ~0.6-0.65 x rotor for
+  // offshore, and rated speeds fall as rotors grow for a given rating.
+  g_5p6_162: {
+    name: "5.6 MW · 162 m rotor", manufacturer: "Generic", type: "onshore",
+    ratedKW: 5600, rotorD: 162, hubHeight: 125, vCutIn: 3, vRated: 11, vCutOut: 25, cpMax: 0.45
+  },
+  g_6p0_170: {
+    name: "6.0 MW · 170 m rotor", manufacturer: "Generic", type: "onshore",
+    ratedKW: 6000, rotorD: 170, hubHeight: 135, vCutIn: 3, vRated: 11.5, vCutOut: 25, cpMax: 0.45
+  },
+  g_15_236: {
+    name: "15 MW · 236 m rotor", manufacturer: "Generic", type: "offshore",
+    ratedKW: 15000, rotorD: 236, hubHeight: 150, vCutIn: 3, vRated: 11, vCutOut: 25, cpMax: 0.45
+  },
+  g_20_260: {
+    name: "20 MW · 260 m rotor", manufacturer: "Generic", type: "offshore",
+    ratedKW: 20000, rotorD: 260, hubHeight: 160, vCutIn: 3, vRated: 11.5, vCutOut: 26, cpMax: 0.45
   }
 };
 const DEFAULT_MODEL = 'custom';
@@ -772,13 +816,37 @@ function getTurbineSpec(pos){
 let defBenchSpec = { ...TURBINES.custom };
 let defBenchModel = 'custom';
 
+// The library is long enough now that a flat list is hard to scan, so both
+// model dropdowns are grouped by siting type and sorted by rating within each.
+function populateTurbineSelect(select, selectedKey, customLabel){
+  const groups = { onshore: [], offshore: [] };
+  Object.entries(TURBINES).forEach(([key, s]) => {
+    if (key === 'custom') return;
+    (groups[s.type] || (groups[s.type] = [])).push([key, s]);
+  });
+  const custom = document.createElement('option');
+  custom.value = 'custom';
+  custom.textContent = customLabel;
+  if (selectedKey === 'custom') custom.selected = true;
+  select.appendChild(custom);
+  [['onshore', 'Onshore'], ['offshore', 'Offshore']].forEach(([type, label]) => {
+    const list = (groups[type] || []).sort((a, b) => a[1].ratedKW - b[1].ratedKW);
+    if (!list.length) return;
+    const og = document.createElement('optgroup');
+    og.label = label;
+    list.forEach(([key, s]) => {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = s.name;
+      if (key === selectedKey) opt.selected = true;
+      og.appendChild(opt);
+    });
+    select.appendChild(og);
+  });
+}
+
 const defBenchSelect = document.getElementById('defBenchSelect');
-Object.entries(TURBINES).forEach(([key, s]) => {
-  const opt = document.createElement('option');
-  opt.value = key;
-  opt.textContent = key === 'custom' ? 'Custom (define below)' : `${s.name} (${s.type})`;
-  defBenchSelect.appendChild(opt);
-});
+populateTurbineSelect(defBenchSelect, 'custom', 'Custom (define below)');
 
 function renderDefBenchFields(){
   const host = document.getElementById('defBenchFields');
@@ -973,7 +1041,18 @@ const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x
   attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 19
 });
 standardLayer.addTo(map); // default
-L.control.layers({ "Standard": standardLayer, "Topo": topoLayer, "Satellite": satelliteLayer, "Dark (minimal)": darkLayer, "Bathymetry (EMODnet, EU)": emodnetLayer, "Bathymetry (GEBCO, global)": gebcoLayer }, {}, { collapsed: false, position: 'topright' }).addTo(map);
+// Six base layers listed open covers most of a phone screen, so the control
+// starts collapsed to a single icon on small viewports and expands on tap.
+// Desktop keeps the open list. The media listener handles rotation and resize.
+const smallScreen = window.matchMedia('(max-width: 880px)');
+const layerControl = L.control.layers(
+  { "Standard": standardLayer, "Topo": topoLayer, "Satellite": satelliteLayer, "Dark (minimal)": darkLayer, "Bathymetry (EMODnet, EU)": emodnetLayer, "Bathymetry (GEBCO, global)": gebcoLayer },
+  {},
+  { collapsed: smallScreen.matches, position: 'topright' }
+).addTo(map);
+smallScreen.addEventListener('change', (e) => {
+  if (e.matches) layerControl.collapse(); else layerControl.expand();
+});
 
 // Approximate depth legend, shown only while a bathymetry base layer is
 // active. The two services use similar but not identical palettes, hence
@@ -1196,66 +1275,130 @@ document.getElementById('neighbourIncludeToggle').addEventListener('change', (e)
   recalculate();
 });
 
-document.getElementById('fetchNeighboursBtn').addEventListener('click', async () => {
-  if (!siteCentre) return;
+// Neighbour fetch. Overpass is the least reliable dependency in the stack —
+// public community servers, and this backend calls them from a shared cloud IP
+// that they deprioritise. The handler is built around that reality: a long
+// budget, staged progress so the wait never looks like a hang, one automatic
+// retry, an explicit retry control, and — critically — the existing neighbour
+// set is only replaced once a fetch actually succeeds.
+let neighbourFetchBusy = false;
+
+async function requestNeighbours(radiusM, signal){
+  const base = API_BASE.replace(/\/$/, '');
+  const res = await fetch(`${base}/api/nearby-turbines?lat=${siteCentre.lat}&lon=${siteCentre.lng}&radius_m=${radiusM}`, { signal });
+  if (!res.ok) throw new Error(`server returned ${res.status}`);
+  return await res.json();
+}
+
+function neighbourProgress(line, startedAt, attempt){
+  const s = Math.round((Date.now() - startedAt) / 1000);
+  let msg;
+  if (s < 8)        msg = 'Searching OpenStreetMap…';
+  else if (s < 25)  msg = 'Still searching — the public OpenStreetMap servers can be slow';
+  else              msg = 'Still going — trying backup servers';
+  line.textContent = `${msg} (${s}s${attempt > 1 ? ', attempt ' + attempt : ''})`;
+  line.style.display = 'block';
+}
+
+async function runNeighbourFetch(){
+  if (neighbourFetchBusy || !siteCentre) return;
+  neighbourFetchBusy = true;
   const btn = document.getElementById('fetchNeighboursBtn');
   const line = document.getElementById('neighbourResultLine');
-  btn.disabled = true; btn.textContent = 'Fetching…';
-  clearExternalNeighbours();
   const radiusM = parseInt(document.getElementById('neighbourRadiusSlider').value, 10) * 1000;
-  try {
-    const base = API_BASE.replace(/\/$/, '');
+  btn.disabled = true;
+  btn.textContent = 'Fetching…';
+
+  let data = null, lastErr = null;
+  for (let attempt = 1; attempt <= 2 && !data; attempt++){
+    const startedAt = Date.now();
+    const ticker = setInterval(() => neighbourProgress(line, startedAt, attempt), 1000);
+    neighbourProgress(line, startedAt, attempt);
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 45000);
-    const res = await fetch(`${base}/api/nearby-turbines?lat=${siteCentre.lat}&lon=${siteCentre.lng}&radius_m=${radiusM}`, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (!res.ok) throw new Error(`endpoint returned ${res.status}`);
-    const data = await res.json();
-    if (!data.available){
-      line.textContent = data.note || 'OpenStreetMap lookup unavailable — enter external wake manually in Losses 1b.';
-      line.style.display = 'block';
-      return;
+    // 90 s: the backend walks four Overpass mirrors (~43 s worst case) and may
+    // itself be cold-starting. The old 45 s abort killed requests that would
+    // have succeeded.
+    const timer = setTimeout(() => controller.abort(), 90000);
+    try {
+      data = await requestNeighbours(radiusM, controller.signal);
+    } catch (err) {
+      lastErr = err;
+    } finally {
+      clearTimeout(timer);
+      clearInterval(ticker);
     }
-    const offshore = document.getElementById('offshoreToggle').checked;
-    let own = 0, assumed = 0;
-    (data.turbines || []).forEach(nt => {
-      if (isOwnTurbine(nt.lat, nt.lon)){ own++; return; }
-      const rotorD = nt.rotor_diameter_m || EXT_ASSUMED_ROTOR;
-      const hubHeight = nt.hub_height_m || (offshore ? EXT_ASSUMED_HH_OFFSHORE : EXT_ASSUMED_HH_ONSHORE);
-      const isAssumed = !nt.rotor_diameter_m || !nt.hub_height_m;
-      if (isAssumed) assumed++;
-      const marker = L.circleMarker([nt.lat, nt.lon], {
-        radius: 6, color: '#8a8f98', weight: 2, fillOpacity: 0, dashArray: '3,3'
-      }).addTo(map);
-      // OSM names are third-party-editable and Leaflet renders tooltip strings
-      // as HTML — escape to close the XSS path.
-      const safeName = nt.name ? String(nt.name).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) : '';
-      marker.bindTooltip(`External${safeName ? ' · ' + safeName : ''} · ${rotorD} m rotor${isAssumed ? ' (assumed)' : ''} — click to remove`, { direction: 'top' });
-      const rec = { lat: nt.lat, lng: nt.lon, rotorD, hubHeight, assumed: isAssumed, marker };
-      marker.on('click', (ev) => {
-        // Same guard as user-turbine markers: without it the click bubbles to
-        // the map and places a NEW turbine where the neighbour was removed.
-        L.DomEvent.stopPropagation(ev);
-        marker.remove();
-        externalNeighbours = externalNeighbours.filter(x => x !== rec);
-        updateNeighbourResultLine(own, radiusM);
-        recalculate();
-      });
-      externalNeighbours.push(rec);
-    });
-    externalsFetchedAt = Date.now();
-    updateNeighbourResultLine(own, radiusM);
-    document.getElementById('neighbourIncludeRow').style.display = 'flex';
-    document.getElementById('neighbourIncludeToggle').checked = true;
-    externalsIncluded = true;
-    recalculate();
-  } catch (err) {
-    line.textContent = 'Neighbour lookup failed (' + err.message + '). Try again, or enter external wake manually in Losses 1b.';
-    line.style.display = 'block';
-  } finally {
-    btn.disabled = false; btn.textContent = 'Fetch neighbours';
+    if (!data && attempt === 1){
+      line.textContent = 'First attempt did not come back — retrying once…';
+    }
   }
-});
+
+  btn.disabled = false;
+  btn.textContent = externalNeighbours.length ? 'Re-fetch neighbours' : 'Fetch neighbours';
+
+  if (!data){
+    // The previously fetched set (if any) is deliberately left intact.
+    showNeighbourFailure(lastErr ? (lastErr.name === 'AbortError' ? 'the request timed out' : lastErr.message) : 'unknown error');
+    neighbourFetchBusy = false;
+    return;
+  }
+  if (!data.available){
+    showNeighbourFailure(data.note || 'OpenStreetMap lookup unavailable');
+    neighbourFetchBusy = false;
+    return;
+  }
+
+  // Success — now it is safe to drop the old set and commit the new one.
+  clearExternalNeighbours();
+  const offshore = document.getElementById('offshoreToggle').checked;
+  let own = 0;
+  (data.turbines || []).forEach(nt => {
+    if (isOwnTurbine(nt.lat, nt.lon)){ own++; return; }
+    const rotorD = nt.rotor_diameter_m || EXT_ASSUMED_ROTOR;
+    const hubHeight = nt.hub_height_m || (offshore ? EXT_ASSUMED_HH_OFFSHORE : EXT_ASSUMED_HH_ONSHORE);
+    const isAssumed = !nt.rotor_diameter_m || !nt.hub_height_m;
+    const marker = L.circleMarker([nt.lat, nt.lon], {
+      radius: 6, color: '#8a8f98', weight: 2, fillOpacity: 0, dashArray: '3,3'
+    }).addTo(map);
+    // OSM names are third-party-editable and Leaflet renders tooltip strings
+    // as HTML — escape to close the XSS path.
+    const safeName = nt.name ? String(nt.name).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) : '';
+    marker.bindTooltip(`External${safeName ? ' · ' + safeName : ''} · ${rotorD} m rotor${isAssumed ? ' (assumed)' : ''} — click to remove`, { direction: 'top' });
+    const rec = { lat: nt.lat, lng: nt.lon, rotorD, hubHeight, assumed: isAssumed, marker };
+    marker.on('click', (ev) => {
+      // Same guard as user-turbine markers: without it the click bubbles to
+      // the map and places a NEW turbine where the neighbour was removed.
+      L.DomEvent.stopPropagation(ev);
+      marker.remove();
+      externalNeighbours = externalNeighbours.filter(x => x !== rec);
+      updateNeighbourResultLine(own, radiusM);
+      recalculate();
+    });
+    externalNeighbours.push(rec);
+  });
+  externalsFetchedAt = Date.now();
+  updateNeighbourResultLine(own, radiusM);
+  document.getElementById('neighbourIncludeRow').style.display = 'flex';
+  document.getElementById('neighbourIncludeToggle').checked = true;
+  externalsIncluded = true;
+  btn.textContent = 'Re-fetch neighbours';
+  recalculate();
+  neighbourFetchBusy = false;
+}
+
+function showNeighbourFailure(reason){
+  const line = document.getElementById('neighbourResultLine');
+  const kept = externalNeighbours.length
+    ? ` Your existing ${externalNeighbours.length} neighbours are still loaded and in use.`
+    : ' You can retry, or set external wake manually as a percentage in Losses 1b.';
+  line.innerHTML = `OpenStreetMap lookup did not succeed (${reason}). The public OSM servers are ` +
+    `intermittently busy — retrying often works.${kept} ` +
+    `<a href="#" id="neighbourRetryLink" style="color:var(--accent);">Try again</a>`;
+  line.style.display = 'block';
+  const link = document.getElementById('neighbourRetryLink');
+  if (link) link.onclick = (e) => { e.preventDefault(); runNeighbourFetch(); };
+}
+
+document.getElementById('fetchNeighboursBtn').addEventListener('click', runNeighbourFetch);
 
 function updateNeighbourResultLine(ownCount, radiusM){
   const line = document.getElementById('neighbourResultLine');
@@ -1488,13 +1631,7 @@ function renderTurbineCards(){
     body.style.display = isExpanded ? 'block' : 'none';
 
     const modelSelect = document.createElement('select');
-    Object.entries(TURBINES).forEach(([key, s]) => {
-      const opt = document.createElement('option');
-      opt.value = key;
-      opt.textContent = key === 'custom' ? 'Custom' : `${s.manufacturer} ${s.name} (${s.type})`;
-      if (key === t.model) opt.selected = true;
-      modelSelect.appendChild(opt);
-    });
+    populateTurbineSelect(modelSelect, t.model, 'Custom');
     modelSelect.onchange = (e) => {
       t.model = e.target.value;
       delete t.cpMax; // don't carry a Cp override from a previous model onto the new one
