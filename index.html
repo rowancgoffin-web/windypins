@@ -499,7 +499,7 @@
             <div class="loss-row"><label>1b &middot; External wake (neighbouring farms)</label><div class="unit-input"><input type="text" data-loss="extWake" data-default="0.0" value="0.0"><span class="pct-sign">%</span></div></div>
             <div class="hint" id="extWakeHint" style="margin-top:0;">Wakes from farms outside this layout. 1&ndash;3% is common near existing UK clusters, 0 if isolated. Fetch neighbours to compute it, or enter manually.</div>
             <div class="loss-row"><label>1c &middot; Blockage (induction zone)</label><div class="unit-input"><input type="text" data-loss="blockage" data-default="2.0" value="2.0"><span class="pct-sign">%</span></div></div>
-            <div class="hint" id="blockageHint" style="margin-top:0;">DNV documented range: 0&ndash;4% of AEP. Literature-informed placeholder, not physically modelled.</div>
+            <div class="hint" id="blockageHint" style="margin-top:0;">Default 2%, edit to suit. DNV documented range 0&ndash;4% of AEP.</div>
           </div>
 
           <div class="loss-group">
@@ -1001,7 +1001,6 @@ document.querySelectorAll('.field-wrap').forEach(w => {
 });
 document.getElementById('manualAdjustment').addEventListener('change', recalculate);
 document.getElementById('overallUncertainty').addEventListener('input', () => { uncertaintyAuto = false; });
-document.querySelector('[data-loss="blockage"]').addEventListener('input', () => { blockageAuto = false; });
 document.getElementById('overallUncertainty').addEventListener('change', recalculate);
 document.getElementById('iavInput').addEventListener('input', () => { iavAuto = false; });
 document.getElementById('iavInput').addEventListener('change', recalculate);
@@ -3411,12 +3410,10 @@ function gaussianDeficit(x, y, dz, D0, kStar, Ct){
 // This captures ROTOR-INDUCED blockage only. Measured offshore blockage
 // (Bleeg 2018, 2-4% of AEP) includes an atmospheric/global component this
 // cannot represent, so the result is a physically-grounded LOWER BOUND. It is
-// displayed beside loss 1c for the user to adopt, never auto-applied.
+// shown beside loss 1c for reference only. Applied automatically (v13 to v14)
+// it came out close to zero at normal spacings (0.02% at London Array), which
+// took blockage out of every result, so 1c is an editable default again.
 const BLOCKAGE_CT = 0.8;
-// Auto-apply: the computed figure is written into the 1c input on every
-// recalculation until the user edits the field, which hands control back to
-// them (same pattern as overall uncertainty). Their value is never fought.
-let blockageAuto = true;
 function computeBlockagePct(){
   if (!roseData || turbines.length < 2) return null;
   const { sectorAngles, freqs } = roseData;
@@ -3454,31 +3451,9 @@ function updateBlockageHint(){
   const hint = document.getElementById('blockageHint');
   if (!hint) return;
   const pct = computeBlockagePct();
-  const input = document.querySelector('[data-loss="blockage"]');
-  if (pct === null){
-    hint.innerHTML = 'DNV documented range: 0&ndash;4% of AEP. A calculated estimate appears once there are two turbines and a wind rose.';
-    return;
-  }
-  if (blockageAuto && input && parseFloat(input.value) !== parseFloat(pct.toFixed(2))){
-    input.value = pct.toFixed(2);
-    // The changed value feeds this recalculation via getLossInputs, no
-    // re-entrant recalculate() needed.
-  }
-  if (blockageAuto){
-    hint.innerHTML = `<strong>Calculated and applied: ${pct.toFixed(2)}%</strong> ` +
-      `(vortex-cylinder, rotor induction only: a lower bound that excludes atmospheric blockage). ` +
-      `DNV documented range 0&ndash;4%. Edit the field to take over manually.`;
-  } else {
-    hint.innerHTML = `DNV documented range: 0&ndash;4% of AEP. <strong>Calculated: ${pct.toFixed(2)}%</strong> ` +
-      `(rotor induction only, a lower bound). Manual value in use. ` +
-      `<a href="#" id="applyBlockageLink" style="color:var(--accent);">re-apply calculated</a>`;
-    const link = document.getElementById('applyBlockageLink');
-    if (link) link.onclick = (e) => {
-      e.preventDefault();
-      blockageAuto = true;
-      if (input){ input.value = pct.toFixed(2); recalculate(); }
-    };
-  }
+  const base = 'Default 2%, edit to suit. DNV documented range 0&ndash;4% of AEP.';
+  hint.innerHTML = pct === null ? base
+    : `${base} Calculated rotor induction for this layout: <strong>${pct.toFixed(2)}%</strong>, a lower bound that leaves out atmospheric blockage, shown for reference.`;
 }
 
 // Fallback for when no site centre / rose data is set yet: worst-case
@@ -4379,12 +4354,12 @@ document.getElementById('loadSiteInput').addEventListener('change', async (e) =>
         const input = document.querySelector(`[data-loss="${key}"]`);
         if (input) input.value = val;
       });
-      // Same principle as uncertainty below: a value restored from file is a
-      // deliberate choice, auto-blockage must not clobber it on the next
-      // recalculation. The re-apply link in the 1c hint restores auto mode.
-      // A file without a blockage value (hand-made validation files) takes
-      // the calculated figure, whatever the session was doing before.
-      blockageAuto = state.lossVals.blockage === undefined;
+      // A file without a blockage value takes the default, whatever the
+      // session had in the field before.
+      if (state.lossVals.blockage === undefined){
+        const el = document.querySelector('[data-loss="blockage"]');
+        if (el) el.value = el.dataset.default;
+      }
       openAdvancedWithEdits();
     }
     if (state.manualAdj !== undefined) document.getElementById('manualAdjustment').value = state.manualAdj;
