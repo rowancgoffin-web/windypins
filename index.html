@@ -318,8 +318,8 @@
           <h2>Theory</h2>
           <div class="theory-item">
             <span class="t-tab">Siting</span>
-            Wind climate from the Global Wind Atlas, downscaled to your coordinates with a Jackson-Hunt terrain speed-up correction from sampled elevation.
-            <a href="manual.html#2-wind-data-sources" target="_blank" rel="noopener" class="theory-link">data sources</a> · <a href="manual.html#11-terrain-speed-up-correction" target="_blank" rel="noopener" class="theory-link">terrain correction</a>
+            Wind climate from the Global Wind Atlas, adjusted for local terrain sector by sector with a linear flow model on an elevation grid around the site.
+            <a href="manual.html#2-wind-data-sources" target="_blank" rel="noopener" class="theory-link">data sources</a> · <a href="manual.html#11-terrain-speed-up-correction" target="_blank" rel="noopener" class="theory-link">terrain model</a>
           </div>
           <div class="theory-item">
             <span class="t-tab">Shearing</span>
@@ -333,13 +333,13 @@
           </div>
           <div class="theory-item">
             <span class="t-tab">Results</span>
-            Weibull-integrated power curve with ISA air-density correction, and uncertainty from a root-sum-square of component errors.
+            Weibull-integrated power curve fitted to manufacturer curves, air density from the site's ERA5 temperature, and uncertainty from a root-sum-square of component errors.
             <a href="manual.html#3b-air-density-correction" target="_blank" rel="noopener" class="theory-link">air density</a> · <a href="manual.html#13-turbine-library" target="_blank" rel="noopener" class="theory-link">turbine library</a>
           </div>
           <p class="desc" style="margin:10px 0 0;">Full derivations, known limitations, and roadmap: <a href="manual.html" target="_blank" rel="noopener" style="color:var(--cyan);font-weight:600;text-decoration:none;">Manual</a>.</p>
         </div>
         <div class="disclaimer">
-          <strong>Data sources.</strong> Wind: NASA POWER (MERRA-2, ~50km) / Global Wind Atlas (GWC). Terrain: Open-Elevation + simplified Jackson-Hunt correction. Map tiles: OpenStreetMap / OpenTopoMap / Esri. Bathymetry: EMODnet / GEBCO.
+          <strong>Data sources.</strong> Wind: Global Wind Atlas (GWC), with NASA POWER (MERRA-2, ~50 km) as a fallback. Terrain: Terrain Tiles on AWS (Mapzen and others). Temperature and long-term statistics: ERA5 (Copernicus Climate Change Service) via <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>. Power curve shape: fitted to the OpenEnergy Platform turbine library (ODbL). Map tiles: OpenStreetMap / OpenTopoMap / Esri. Bathymetry: EMODnet / GEBCO. Full credits and licences are in the <a href="manual.html#17-data-credits" target="_blank" rel="noopener">Manual</a>.
         </div>
         <div class="section">
           <details class="advanced">
@@ -350,7 +350,7 @@
             </div>
           </details>
         </div>
-        <div class="version-line">WindyPins v14.1 · Rowan Goffin · screening tool, not a bankable assessment</div>
+        <div class="version-line">WindyPins v15.0 · Rowan Goffin · screening tool, not a bankable assessment</div>
       </div>
 
       <!-- SITING -->
@@ -485,7 +485,7 @@
           </label>
         </div>
         <div class="section" id="neighbourEmptyNote">
-          <div class="hint" style="margin-top:0;">Place a site centre to search for neighbours.</div>
+          <div class="hint" style="margin-top:0;">Place a turbine to search for neighbours.</div>
         </div>
       </div>
       <div class="tab-panel" id="tab-losses">
@@ -499,7 +499,7 @@
             <div class="loss-row"><label>1b &middot; External wake (neighbouring farms)</label><div class="unit-input"><input type="text" data-loss="extWake" data-default="0.0" value="0.0"><span class="pct-sign">%</span></div></div>
             <div class="hint" id="extWakeHint" style="margin-top:0;">Wakes from farms outside this layout. 1&ndash;3% is common near existing UK clusters, 0 if isolated. Fetch neighbours to compute it, or enter manually.</div>
             <div class="loss-row"><label>1c &middot; Blockage (induction zone)</label><div class="unit-input"><input type="text" data-loss="blockage" data-default="2.0" value="2.0"><span class="pct-sign">%</span></div></div>
-            <div class="hint" id="blockageHint" style="margin-top:0;">DNV documented range: 0&ndash;4% of AEP. Literature-informed placeholder, not physically modelled.</div>
+            <div class="hint" id="blockageHint" style="margin-top:0;">Default 2%, edit to suit. DNV documented range 0&ndash;4% of AEP.</div>
           </div>
 
           <div class="loss-group">
@@ -728,6 +728,14 @@ const API_BASE = 'https://turbine-yield-backend.onrender.com';
 // ---------- Tab switching ----------
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    // Leaving Siting is a commit point: the layout is settled, so the centre is
+    // fetched from its final position (skipped if it has not moved).
+    const leavingSiting = document.querySelector('.tab-btn.active')?.dataset.tab === 'siting'
+      && btn.dataset.tab !== 'siting';
+    if (leavingSiting && typeof commitSiteCentreFetch === 'function'){
+      commitSiteCentreFetch();
+      recalculate();
+    }
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
@@ -735,7 +743,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-// Turbine library: 10 generic turbine classes with key parameters (rated power,
+// Turbine library: 19 generic turbine classes with key parameters (rated power,
 // rotor diameter, hub height, cut-in/cut-out) drawn from turbines common in the
 // UK/Europe, plus a fully user-definable "Custom" entry (the default for new
 // turbines). Entries are deliberately NOT branded with manufacturer model names:
@@ -748,11 +756,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 // cut-in/cut-out wind speeds) are drawn from public manufacturer specs and
 // industry references. vRated is the manufacturer's nameplate figure, kept for
 // display/reference, it is NOT used as the power-curve's saturation point (see
-// powerCurveKW below). cpMax (power coefficient) is a single, literature-typical
-// value (0.45) applied fleet-wide, not a per-model tuned figure, exact
-// manufacturer power-curve tables are locked inside proprietary datasheet
-// graphics (images, not extractable data) and aren't available here. See the
-// Wiki (Methodology §13) for the full derivation and honest limitations.
+// powerCurveKW below). cpMax (peak power coefficient) is a single value (0.45)
+// applied fleet-wide rather than a per-model figure. Manual §13 has the curve
+// derivation and its limitations.
 const TURBINES = {
   custom: {
     name: "Custom", manufacturer: "User-defined", type: "custom",
@@ -995,7 +1001,6 @@ document.querySelectorAll('.field-wrap').forEach(w => {
 });
 document.getElementById('manualAdjustment').addEventListener('change', recalculate);
 document.getElementById('overallUncertainty').addEventListener('input', () => { uncertaintyAuto = false; });
-document.querySelector('[data-loss="blockage"]').addEventListener('input', () => { blockageAuto = false; });
 document.getElementById('overallUncertainty').addEventListener('change', recalculate);
 document.getElementById('iavInput').addEventListener('input', () => { iavAuto = false; });
 document.getElementById('iavInput').addEventListener('change', recalculate);
@@ -1054,8 +1059,9 @@ document.getElementById('shearLawSelect').addEventListener('change', (e) => {
 document.getElementById('shearExponent').addEventListener('change', recalculate);
 document.getElementById('roughnessSelect').addEventListener('change', () => {
   if (siteCentre) renderWindRose(siteCentre.lat, siteCentre.lng); // roughness affects the GWA interpolation, so re-fetch
+  scheduleTerrainUpdate(0); // and the flow model's inner layer
 });
-document.getElementById('offshoreToggle').addEventListener('change', recalculate);
+document.getElementById('offshoreToggle').addEventListener('change', () => { scheduleTerrainUpdate(0); recalculate(); });
 
 // ---------- Map setup ----------
 const map = L.map('map', { zoomControl: true }).setView([51.5074, -0.1278], 11);
@@ -1262,6 +1268,7 @@ async function renderWindRose(lat, lng){
   const hubHeight = turbines.length > 0 ? getTurbineSpec(turbines[0]).hubHeight : 80; // first turbine's effective HH as a reasonable default
   const result = await fetchWindRoseData(lat, lng, hubHeight);
   roseData = result; // store globally so recalculate() can use it for direction-weighted wake+AEP
+  refreshTerrainOverlays(); // the wind speed overlay is built from the rose
   document.getElementById('roseSvgHolder').innerHTML = buildWindRoseSVG(result.freqs, result.sectorAngles, result.live);
   if (!roseDismissed){
     document.getElementById('windRoseOverlay').style.display = 'block';
@@ -1469,11 +1476,16 @@ function updateNeighbourResultLine(ownCount, radiusM){
   line.style.display = 'block';
 }
 
-function setSiteCentre(lat, lng){
-  // A new site centre invalidates any fetched neighbour set (different area).
-  clearExternalNeighbours();
-  document.getElementById('neighbourEmptyNote').style.display = 'none';
-  document.getElementById('fetchNeighboursBtn').disabled = false;
+// The site centre follows the layout unless the user pins one by hand: the
+// turbine centroid when there are turbines, otherwise the centroid of a drawn
+// boundary, otherwise nothing. Placing it and fetching from it are separate.
+// The marker tracks the layout continuously, while the GWA and ERA5 lookups
+// commit only at the first turbine, when a boundary is drawn, and on leaving
+// the Siting tab.
+let siteCentrePinned = false;
+let lastFetchedCentre = null;
+
+function placeSiteCentre(lat, lng){
   siteCentre = { lat, lng };
   if (siteCentreMarker) map.removeLayer(siteCentreMarker);
   siteCentreMarker = L.marker([lat, lng], {
@@ -1483,34 +1495,88 @@ function setSiteCentre(lat, lng){
       iconSize: [16, 16], iconAnchor: [8, 8]
     })
   }).addTo(map);
-  document.getElementById('siteCentreCoords').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  const mode = siteCentrePinned ? 'pinned' : (turbines.length ? 'turbine centroid' : 'site boundary');
+  document.getElementById('siteCentreCoords').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)} (${mode})`;
+  document.getElementById('neighbourEmptyNote').style.display = 'none';
+  document.getElementById('fetchNeighboursBtn').disabled = false;
   checkSiteCentreDistance();
   updateShearInactiveNote();
-  fetchIAV(lat, lng); // async, refreshes the uncertainty breakdown when it lands
-  // Returned so callers that need the rose before continuing (the area fill's
-  // align-to-prevailing path) can await it. Ignoring the return value keeps the
-  // previous fire-and-forget behaviour.
-  roseReady = renderWindRose(lat, lng);
+}
+
+// Commits the lookups, unless the centre has moved less than 100 m since the
+// last commit, which is below the GWA grid spacing and cannot change the
+// resource cell. Returns the rose promise so a caller can wait for it.
+function commitSiteCentreFetch(){
+  if (!siteCentre) return roseReady;
+  if (lastFetchedCentre && distMetres(siteCentre, lastFetchedCentre) < 100) return roseReady;
+  lastFetchedCentre = { lat: siteCentre.lat, lng: siteCentre.lng };
+  // A neighbour set fetched around the old centre no longer applies. Cleared
+  // here only, not on every centroid nudge.
+  clearExternalNeighbours();
+  fetchIAV(siteCentre.lat, siteCentre.lng); // async, refreshes the uncertainty breakdown when it lands
+  roseReady = renderWindRose(siteCentre.lat, siteCentre.lng);
   return roseReady;
 }
 
-// The site centre drives which GWA tile the whole analysis uses. If it sits far
-// from the turbines (user-reported: turbines in Normandy, centre in Queensland),
-// every result silently uses the wrong regional wind climate. Warn rather than
-// hard-block: a centre a few km outside a tight cluster is legitimate.
+// Pinned by hand: fixed until the user returns it to automatic.
+function pinSiteCentre(lat, lng){
+  siteCentrePinned = true;
+  placeSiteCentre(lat, lng);
+  commitSiteCentreFetch();
+  recalculate();
+}
+
+function clearSiteCentre(){
+  siteCentre = null;
+  lastFetchedCentre = null;
+  if (siteCentreMarker){ map.removeLayer(siteCentreMarker); siteCentreMarker = null; }
+  document.getElementById('siteCentreCoords').textContent = 'Not set';
+  document.getElementById('siteCentreWarning').style.display = 'none';
+  clearExternalNeighbours();
+  document.getElementById('neighbourEmptyNote').style.display = 'block';
+  document.getElementById('fetchNeighboursBtn').disabled = true;
+  updateShearInactiveNote();
+}
+
+function autoCentreTarget(){
+  if (turbines.length) return turbineCentroid();
+  if (siteArea) return areaCentroid(siteArea.ring);
+  return null;
+}
+
+// Keeps an unpinned centre on the layout, or clears it when there is nothing
+// left to follow. fetchNow also commits the lookups.
+function syncAutoCentre({ fetchNow = false } = {}){
+  if (siteCentrePinned){ checkSiteCentreDistance(); return roseReady; }
+  const c = autoCentreTarget();
+  if (!c){ clearSiteCentre(); return roseReady; }
+  placeSiteCentre(c.lat, c.lng);
+  return fetchNow ? commitSiteCentreFetch() : roseReady;
+}
+
+// The site centre drives which GWA cell the whole analysis uses. If it sits far
+// from what is being assessed (user-reported: turbines in Normandy, centre in
+// Queensland), every result silently uses the wrong regional wind climate.
+// Warn rather than block: a centre a few km outside a tight cluster is fine.
 function checkSiteCentreDistance(){
   const warn = document.getElementById('siteCentreWarning');
-  if (!siteCentre || turbines.length === 0){ warn.style.display = 'none'; return; }
-  const c = turbineCentroid();
-  const d = distMetres(siteCentre, c);
-  if (d > 20000){
-    warn.textContent = `⚠ Site centre is ${(d / 1000).toFixed(0)} km from the turbine centroid, the wind rose may not represent the turbines' actual location. Consider "Use turbine centroid".`;
+  if (!siteCentre){ warn.style.display = 'none'; return; }
+  const refs = [];
+  if (turbines.length) refs.push(['turbine centroid', turbineCentroid()]);
+  if (siteArea) refs.push(['site boundary', areaCentroid(siteArea.ring)]);
+  let worst = null;
+  refs.forEach(([label, c]) => {
+    const d = distMetres(siteCentre, c);
+    if (d > 20000 && (!worst || d > worst.d)) worst = { label, d };
+  });
+  if (worst){
+    warn.textContent = `⚠ Site centre is ${(worst.d / 1000).toFixed(0)} km from the ${worst.label}, so the wind rose may not represent that location.`
+      + (siteCentrePinned ? ' "Use turbine centroid" returns it to automatic.' : '');
     warn.style.display = 'block';
   } else {
     warn.style.display = 'none';
   }
 }
-
 function turbineCentroid(){
   const lat = turbines.reduce((s, t) => s + t.lat, 0) / turbines.length;
   const lng = turbines.reduce((s, t) => s + t.lng, 0) / turbines.length;
@@ -1521,10 +1587,12 @@ document.getElementById('spacingGuideToggle').addEventListener('change', updateS
 document.getElementById('spacingMajor').addEventListener('change', updateSpacingGuides);
 document.getElementById('spacingMinor').addEventListener('change', updateSpacingGuides);
 
+// Returns the centre to automatic, following the layout again.
 document.getElementById('centroidBtn').addEventListener('click', () => {
-  if (turbines.length === 0){ alert('Place at least one turbine first.'); return; }
-  const c = turbineCentroid();
-  setSiteCentre(c.lat, c.lng);
+  if (turbines.length === 0 && !siteArea){ alert('Place at least one turbine first.'); return; }
+  siteCentrePinned = false;
+  syncAutoCentre({ fetchNow: true });
+  recalculate();
 });
 
 map.on('click', (e) => {
@@ -1532,7 +1600,7 @@ map.on('click', (e) => {
   // braces: a click that leaks through while drawing must not drop a turbine.
   if (drawingArea) return;
   if (armSiteCentreMode){
-    setSiteCentre(e.latlng.lat, e.latlng.lng);
+    pinSiteCentre(e.latlng.lat, e.latlng.lng);
     armSiteCentreMode = false;
     const btn = document.getElementById('setSiteCentreBtn');
     btn.classList.remove('armed');
@@ -1622,7 +1690,9 @@ function addTurbine(lat, lng){
     customSpec: { ...defBenchSpec }, // independent copy, editing one custom turbine shouldn't affect another
     elevationData: null
   });
-  fetchAndApplyElevation(turbines[turbines.length - 1]);
+  // The first turbine commits the lookups; later ones only move the marker.
+  syncAutoCentre({ fetchNow: turbines.length === 1 });
+  scheduleTerrainUpdate(250);
   renderTurbineCards();
   document.querySelector('.tab-btn[data-tab="siting"]').click();
   scheduleRecalculate();
@@ -1633,6 +1703,7 @@ function removeTurbine(id){
   if (t) map.removeLayer(t.marker);
   turbines = turbines.filter(t => t.id !== id);
   expandedTurbineIds.delete(id);
+  syncAutoCentre(); // clears an automatic centre once nothing is left to follow
   renderTurbineCards();
   relabelMarkers();
   recalculate();
@@ -1644,6 +1715,7 @@ function moveTurbineMarker(t){ t.marker.setLatLng([t.lat, t.lng]); map.panTo([t.
 document.getElementById('clearBtn').addEventListener('click', () => {
   turbines.forEach(t => map.removeLayer(t.marker));
   turbines = [];
+  syncAutoCentre(); // falls back to the boundary, or clears, unless pinned
   renderTurbineCards();
   recalculate();
 });
@@ -1738,16 +1810,6 @@ function areaCentroid(ring){
   return { lat: lat0 + cy / M_PER_DEG_LAT, lng: lng0 + cx / mLng };
 }
 
-// The boundary implies a location, so a site with no centre yet can bootstrap
-// one from it rather than making the user go and set a centre before the grid
-// can be oriented. Deliberately a fallback only: an existing centre, however it
-// was set, is never overwritten.
-function ensureSiteCentreFromArea(){
-  if (siteCentre || !siteArea) return Promise.resolve();
-  const c = areaCentroid(siteArea.ring);
-  return Promise.resolve(setSiteCentre(c.lat, c.lng));
-}
-
 function setAreaPanelState(){
   const has = !!siteArea;
   document.getElementById('areaDrawRow').style.display = has ? 'none' : 'block';
@@ -1784,6 +1846,7 @@ function removeSiteArea(){
   clearPendingFill(); // a confirmation for a boundary that no longer exists
   setAreaPanelState();
   document.getElementById('areaFillNote').textContent = '';
+  syncAutoCentre(); // a centre that was following the boundary goes with it
 }
 
 function startAreaDraw(){
@@ -1822,9 +1885,11 @@ map.on('draw:created', (e) => {
   // A confirmation pending against the previous boundary must not carry over:
   // confirming it here would place that boundary's grid, not this one's.
   clearPendingFill();
-  // Start the rose fetch now so it is normally ready by the time the user fills.
-  // Failures surface at fill time, where they can be reported in context.
-  ensureSiteCentreFromArea().catch(() => {});
+  // Drawing a boundary is a commit point: with no turbines the automatic centre
+  // moves to the boundary and its rose is normally ready by the time the user
+  // fills. Failures surface at fill time, where they can be reported in context.
+  Promise.resolve(syncAutoCentre({ fetchNow: true })).catch(() => {});
+  scheduleTerrainUpdate(0); // the overlays can cover the new area
 });
 
 // Builds the candidate lattice. Returns { points, count, bearing, rowPitch }.
@@ -1932,12 +1997,12 @@ async function bulkPlaceTurbines(points, modelKey){
     turbines.push(t);
     placed.push(t);
   });
+  syncAutoCentre(); // marker follows the new layout; the fetch waits for a commit point
   relabelMarkers();
   renderTurbineCards();
-  // fetchElevationsQueued finishes with its own renderTurbineCards() and
-  // recalculate(), so repeating them here would run the O(n²) wake calculation
-  // twice over the whole new fleet.
-  await fetchElevationsQueued(turbines.filter(t => !t.elevationData));
+  // updateTerrain finishes with its own renderTurbineCards() and recalculate(),
+  // so repeating them here would run the O(n²) wake calculation twice.
+  await updateTerrain();
   return placed; // so the caller can report on this fill's turbines specifically
 }
 
@@ -1951,15 +2016,14 @@ document.getElementById('areaFillBtn').addEventListener('click', async () => {
   const alignNote = document.getElementById('areaAlignNote');
   alignNote.style.display = 'none';
 
-  // Aligning needs a wind rose, which needs a site centre. If neither exists,
-  // derive one from the boundary and wait for it rather than silently placing a
-  // north-up grid. Only a genuine data failure can leave the rose unavailable.
+  // Aligning needs a wind rose. The automatic centre already follows the
+  // boundary when there are no turbines, so wait for its fetch rather than
+  // silently placing a north-up grid. Only a genuine data failure can leave
+  // the rose unavailable.
   if (alignBox.checked && !roseData){
     note.textContent = 'Fetching wind data for the area…';
-    // Await both: the centre may need deriving, or a fetch triggered when the
-    // boundary was drawn may still be in flight.
     try {
-      await ensureSiteCentreFromArea();
+      await syncAutoCentre({ fetchNow: true });
       await roseReady;
     } catch (err) { /* handled by the check below */ }
     if (!roseData){
@@ -2047,6 +2111,7 @@ document.getElementById('areaClearBtn').addEventListener('click', () => {
   inside.forEach(t => map.removeLayer(t.marker));
   turbines = turbines.filter(t => !ids.has(t.id));
   ids.forEach(id => expandedTurbineIds.delete(id));
+  syncAutoCentre();
   relabelMarkers();
   renderTurbineCards();
   recalculate();
@@ -2202,20 +2267,25 @@ function renderTurbineCards(){
 
     const row2 = document.createElement('div');
     row2.className = 'field-row';
-    row2.appendChild(makeField('Latitude', t.lat, (val) => { t.lat = val; moveTurbineMarker(t); fetchAndApplyElevation(t); scheduleRecalculate(); }, 5));
-    row2.appendChild(makeField('Longitude', t.lng, (val) => { t.lng = val; moveTurbineMarker(t); fetchAndApplyElevation(t); scheduleRecalculate(); }, 5));
+    row2.appendChild(makeField('Latitude', t.lat, (val) => { t.lat = val; moveTurbineMarker(t); t.elevationData = null; scheduleTerrainUpdate(); scheduleRecalculate(); }, 5));
+    row2.appendChild(makeField('Longitude', t.lng, (val) => { t.lng = val; moveTurbineMarker(t); t.elevationData = null; scheduleTerrainUpdate(); scheduleRecalculate(); }, 5));
     body.appendChild(row2);
 
-    if (t.elevationData){
+    const ed = t.elevationData;
+    if (ed || terrainStatus === 'loading'){
       const elevInfo = document.createElement('div');
       elevInfo.className = 'hint';
-      if (t.elevationData.live){
-        const speedupPct = (t.elevationData.terrain_speedup_fraction * 100).toFixed(1);
-        const speedupLabel = t.elevationData.terrain_speedup_fraction >= 0 ? `+${speedupPct}% speed-up` : `${speedupPct}% slowdown`;
-        elevInfo.innerHTML = `Elevation ${t.elevationData.elevation_m}m · air density ${(t.elevationData.air_density_ratio * 100).toFixed(1)}%`
-          + (t.elevationData.terrain_complex ? `<span style="color:var(--amber);">  ⚠ steep terrain (${t.elevationData.max_slope_pct}% slope)</span>` : '');
+      if (!ed){
+        elevInfo.textContent = 'Fetching terrain…';
+      } else if (ed.live){
+        const dens = hubAirDensity(ed.elevation_m, spec.hubHeight);
+        const parts = [ed.source === 'offshore' || ed.atSea ? 'At sea' : `Elevation ${Math.round(ed.elevation_m)} m`];
+        if (ed.source === 'dem' && !ed.atSea) parts.push(`slope ${Math.round(ed.slope_pct || 0)}%`);
+        parts.push(`air density ${dens.rho.toFixed(3)} kg/m³`);
+        const warn = terrainWarning(ed);
+        elevInfo.innerHTML = parts.join(' · ') + (warn ? `<br><span style="color:var(--amber);">⚠ ${warn}</span>` : '');
       } else {
-        elevInfo.textContent = 'Elevation lookup unavailable, assuming standard air density (1.225 kg/m³)';
+        elevInfo.textContent = 'Elevation unavailable, so flat ground and sea-level air density are assumed.';
       }
       body.appendChild(elevInfo);
     }
@@ -2300,17 +2370,551 @@ async function fetchLiveWind(lat, lng, hubHeight, shear){
   } catch (err) { clearTimeout(timeout); return null; }
 }
 
+// ---------- Terrain: elevation grid and linear flow model ----------
+// Elevation comes from the AWS Terrain Tiles (Terrarium PNG encoding), fetched
+// and decoded in the browser. One grid covers the whole site, so turbine
+// elevations, slopes, RIX and the flow model all come from the same data.
+//
+// The flow model is a linearised (Jackson-Hunt type) solution solved by FFT
+// over the grid, in the spirit of Mason and Sykes' 3D extension. For each
+// Fourier component of the terrain, the potential-flow speed-up at height z
+// above local ground is
+//     dS(k) = h(k) |k| cos²(a) exp(-|k| z)
+// where a is the angle between the wavevector and the wind. Near the surface
+// the sheared boundary layer amplifies this, by the ratio of upstream wind
+// speeds between the outer reference height and max(z, l), squared, where l is
+// the inner layer depth. cos²(a) expands into three direction-independent
+// fields, so speed-ups for any wind direction come from three inverse FFTs.
+const WPTerrain = (() => {
+  const KAPPA = 0.4;
+  const TILE_URL = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+  const M_LAT = 111320;
+  const mLng = lat => 111320 * Math.cos(lat * Math.PI / 180);
+
+  // ---- FFT (radix 2, in place, complex) ----
+  const fftCache = new Map();
+  function fftTables(n){
+    if (fftCache.has(n)) return fftCache.get(n);
+    const rev = new Uint32Array(n);
+    const bits = Math.log2(n) | 0;
+    for (let i = 0; i < n; i++){
+      let r = 0;
+      for (let b = 0; b < bits; b++) r |= ((i >> b) & 1) << (bits - 1 - b);
+      rev[i] = r;
+    }
+    const cos = new Float64Array(n / 2), sin = new Float64Array(n / 2);
+    for (let i = 0; i < n / 2; i++){ cos[i] = Math.cos(2 * Math.PI * i / n); sin[i] = Math.sin(2 * Math.PI * i / n); }
+    const t = { rev, cos, sin };
+    fftCache.set(n, t);
+    return t;
+  }
+  function fft1d(re, im, n, inverse, t){
+    const { rev, cos, sin } = t;
+    for (let i = 0; i < n; i++){
+      const j = rev[i];
+      if (j > i){
+        let tmp = re[i]; re[i] = re[j]; re[j] = tmp;
+        tmp = im[i]; im[i] = im[j]; im[j] = tmp;
+      }
+    }
+    const sgn = inverse ? 1 : -1;
+    for (let size = 2; size <= n; size <<= 1){
+      const half = size >> 1, step = n / size;
+      for (let start = 0; start < n; start += size){
+        for (let k = 0; k < half; k++){
+          const wr = cos[k * step], wi = sgn * sin[k * step];
+          const a = start + k, b = a + half;
+          const xr = re[b] * wr - im[b] * wi;
+          const xi = re[b] * wi + im[b] * wr;
+          re[b] = re[a] - xr; im[b] = im[a] - xi;
+          re[a] += xr; im[a] += xi;
+        }
+      }
+    }
+    if (inverse){ for (let i = 0; i < n; i++){ re[i] /= n; im[i] /= n; } }
+  }
+  // 2D transform of an N x N row-major array (row j = northing, column i = easting)
+  function fft2d(re, im, N, inverse){
+    const t = fftTables(N);
+    const r = new Float64Array(N), m = new Float64Array(N);
+    for (let j = 0; j < N; j++){
+      const o = j * N;
+      for (let i = 0; i < N; i++){ r[i] = re[o + i]; m[i] = im[o + i]; }
+      fft1d(r, m, N, inverse, t);
+      for (let i = 0; i < N; i++){ re[o + i] = r[i]; im[o + i] = m[i]; }
+    }
+    for (let i = 0; i < N; i++){
+      for (let j = 0; j < N; j++){ r[j] = re[j * N + i]; m[j] = im[j * N + i]; }
+      fft1d(r, m, N, inverse, t);
+      for (let j = 0; j < N; j++){ re[j * N + i] = r[j]; im[j * N + i] = m[j]; }
+    }
+  }
+
+  // ---- boundary layer scales ----
+  // Inner layer depth l from l·ln(l/z0) = 2κ²L (Jackson and Hunt), by Newton.
+  function innerLayerHeight(L, z0){
+    const target = 2 * KAPPA * KAPPA * L;
+    let l = Math.max(target / 10, 2 * z0);
+    for (let it = 0; it < 30; it++){
+      const f = l * Math.log(l / z0) - target;
+      const df = Math.log(l / z0) + 1;
+      const next = Math.max(l - f / df, 1.01 * z0);
+      if (Math.abs(next - l) < 1e-6 * l){ l = next; break; }
+      l = next;
+    }
+    return l;
+  }
+
+  function taper(N, frac){
+    const w = new Float64Array(N).fill(1);
+    const m = Math.round(N * frac);
+    for (let i = 0; i < m; i++){
+      const v = 0.5 * (1 - Math.cos(Math.PI * (i + 0.5) / m));
+      w[i] = v; w[N - 1 - i] = v;
+    }
+    return w;
+  }
+
+  // Terrain spectrum: sea and lakes below datum flattened to zero, best-fit
+  // plane removed (a uniform slope produces no speed-up and would only create
+  // edge effects), edges tapered so the periodic FFT sees a continuous field.
+  function prepareSpectrum(h, N, taperFrac = 0.2){
+    const re = new Float64Array(N * N), im = new Float64Array(N * N);
+    // least-squares plane a + b·i + c·j over the grid (centred indices make it diagonal)
+    let s0 = 0, si = 0, sj = 0, sii = 0, sjj = 0;
+    const c = (N - 1) / 2;
+    for (let j = 0; j < N; j++){
+      for (let i = 0; i < N; i++){
+        const v = Math.max(h[j * N + i], 0);
+        const di = i - c, dj = j - c;
+        s0 += v; si += v * di; sj += v * dj;
+      }
+    }
+    for (let k = 0; k < N; k++){ const d = k - c; sii += d * d; }
+    sjj = sii * N; sii = sii * N;
+    const a = s0 / (N * N), b = si / sii, cc = sj / sjj;
+    const w = taper(N, taperFrac);
+    for (let j = 0; j < N; j++){
+      for (let i = 0; i < N; i++){
+        const v = Math.max(h[j * N + i], 0) - (a + b * (i - c) + cc * (j - c));
+        re[j * N + i] = v * w[i] * w[j];
+      }
+    }
+    fft2d(re, im, N, false);
+    return { re, im, N };
+  }
+
+  // Three real basis fields at height z (m above local ground). The speed-up
+  // for wind from bearing θ, averaged over a sector of width Δ, is
+  //   B0 + sinc(Δ)·(Bc·cos2θ + Bs·sin2θ),   sinc(Δ) = sin(Δ)/Δ.
+  // The outer reference speed is taken at height L, as in Jackson and Hunt's
+  // original analysis (opts.outer 'L'). Against the Askervein measurements this
+  // matched the upwind slope, hilltop line and centre point to within about 0.1
+  // of speed-up at 10 m. Scaling by the middle layer height instead (Hunt,
+  // Leibovich and Richards, opts.outer 'hm') read about a third low there.
+  function speedupBasis(spec, dx, z, z0, opts = {}){
+    const N = spec.N;
+    const outer = opts.outer || 'L';
+    const dk = 2 * Math.PI / (N * dx);
+    const knyq = Math.PI / dx;
+    const lz0 = Math.log(z0);
+    const reA = new Float64Array(N * N), imA = new Float64Array(N * N);
+    const reB = new Float64Array(N * N), imB = new Float64Array(N * N);
+    // Complex packing: B0 + i·Bc in one inverse transform, Bs alone in the other.
+    for (let j = 0; j < N; j++){
+      const kn = (j < N / 2 ? j : j - N) * dk;
+      for (let i = 0; i < N; i++){
+        const ke = (i < N / 2 ? i : i - N) * dk;
+        const idx = j * N + i;
+        const kk = Math.sqrt(ke * ke + kn * kn);
+        if (kk === 0) continue;
+        const L = 1 / kk;
+        const l = innerLayerHeight(L, z0);
+        const zref = outer === 'hm' ? L / Math.sqrt(Math.max(Math.log(L / z0), 1)) : L;
+        let G = 1;
+        if (z < zref && zref > l){
+          const r = (Math.log(zref) - lz0) / (Math.log(Math.max(z, l)) - lz0);
+          G = r * r;
+        }
+        const rr = kk / knyq;
+        const lp = rr < 0.5 ? 1 : rr < 1 ? Math.pow(Math.cos(Math.PI * (rr - 0.5)), 2) : 0;
+        const base = 0.5 * kk * Math.exp(-kk * z) * G * lp;
+        const c2 = (kn * kn - ke * ke) / (kk * kk);
+        const s2 = 2 * ke * kn / (kk * kk);
+        const hr = spec.re[idx], hi = spec.im[idx];
+        // X0 = base·h, Xc = base·c2·h, Xs = base·s2·h; pack X0 + i·Xc
+        const x0r = base * hr, x0i = base * hi;
+        const xcr = base * c2 * hr, xci = base * c2 * hi;
+        reA[idx] = x0r - xci; imA[idx] = x0i + xcr;
+        reB[idx] = base * s2 * hr; imB[idx] = base * s2 * hi;
+      }
+    }
+    fft2d(reA, imA, N, true);
+    fft2d(reB, imB, N, true);
+    const B0 = new Float32Array(N * N), Bc = new Float32Array(N * N), Bs = new Float32Array(N * N);
+    for (let k = 0; k < N * N; k++){ B0[k] = reA[k]; Bc[k] = imA[k]; Bs[k] = reB[k]; }
+    return { B0, Bc, Bs, z, z0, outer };
+  }
+
+  function sectorFactor(widthDeg){
+    if (!(widthDeg > 0)) return 1;
+    const d = widthDeg * Math.PI / 180;
+    return Math.sin(d) / d;
+  }
+  function speedupFromBasis(b0, bc, bs, thetaDeg, widthDeg){
+    const t = thetaDeg * Math.PI / 180;
+    return b0 + sectorFactor(widthDeg) * (bc * Math.cos(2 * t) + bs * Math.sin(2 * t));
+  }
+
+  // Bilinear sample of an N x N field at local metric coordinates (x east, y north,
+  // metres from the grid centre). Node (i, j) sits at ((i - N/2 + 0.5)dx, (j - N/2 + 0.5)dx).
+  function sample(field, N, dx, x, y){
+    const fi = x / dx + N / 2 - 0.5, fj = y / dx + N / 2 - 0.5;
+    const i0 = Math.floor(fi), j0 = Math.floor(fj);
+    if (i0 < 0 || j0 < 0 || i0 + 1 >= N || j0 + 1 >= N) return NaN;
+    const ti = fi - i0, tj = fj - j0;
+    const o = j0 * N + i0;
+    return field[o] * (1 - ti) * (1 - tj) + field[o + 1] * ti * (1 - tj)
+         + field[o + N] * (1 - ti) * tj + field[o + N + 1] * ti * tj;
+  }
+  const ground = (h, N, dx, x, y) => Math.max(sample(h, N, dx, x, y), 0);
+
+  // Ruggedness index (Bowen and Mortensen): share of 72 radial lines out to
+  // 3.5 km, sampled at the grid spacing, steeper than 30%.
+  function rix(h, N, dx, x, y, radius = 3500, crit = 0.3, nRad = 72){
+    const steps = Math.max(1, Math.round(radius / dx));
+    let steep = 0, total = 0;
+    for (let r = 0; r < nRad; r++){
+      const b = (r / nRad) * 2 * Math.PI;
+      const ux = Math.sin(b), uy = Math.cos(b);
+      let prev = ground(h, N, dx, x, y);
+      for (let s = 1; s <= steps; s++){
+        const cur = ground(h, N, dx, x + ux * s * dx, y + uy * s * dx);
+        if (!Number.isFinite(cur) || !Number.isFinite(prev)) break;
+        if (Math.abs(cur - prev) / dx > crit) steep++;
+        total++;
+        prev = cur;
+      }
+    }
+    return total ? 100 * steep / total : 0;
+  }
+
+  // Local slope at a point, central differences over one grid step each way.
+  function slope(h, N, dx, x, y){
+    const gx = (ground(h, N, dx, x + dx, y) - ground(h, N, dx, x - dx, y)) / (2 * dx);
+    const gy = (ground(h, N, dx, x, y + dx) - ground(h, N, dx, x, y - dx)) / (2 * dx);
+    const s = 100 * Math.sqrt(gx * gx + gy * gy);
+    return Number.isFinite(s) ? s : null;
+  }
+
+  // ---- tiles ----
+  const tileCache = new Map(); // 'z/x/y' -> Promise<Float32Array>
+  const TILE_CACHE_MAX = 96;
+  function decodeTile(rgba){
+    const e = new Float32Array(65536);
+    for (let i = 0; i < 65536; i++) e[i] = rgba[4 * i] * 256 + rgba[4 * i + 1] + rgba[4 * i + 2] / 256 - 32768;
+    return e;
+  }
+  async function fetchTileOnce(z, x, y){
+    const url = TILE_URL.replace('{z}', z).replace('{x}', x).replace('{y}', y);
+    const res = await fetch(url, { mode: 'cors' });
+    if (!res.ok) throw new Error(`terrain tile ${z}/${x}/${y} returned ${res.status}`);
+    const bmp = await createImageBitmap(await res.blob());
+    let ctx;
+    if (typeof OffscreenCanvas !== 'undefined') ctx = new OffscreenCanvas(256, 256).getContext('2d');
+    else { const c = document.createElement('canvas'); c.width = c.height = 256; ctx = c.getContext('2d'); }
+    ctx.drawImage(bmp, 0, 0);
+    return decodeTile(ctx.getImageData(0, 0, 256, 256).data);
+  }
+  function loadTile(z, x, y){
+    const n = 2 ** z;
+    x = ((x % n) + n) % n;
+    const key = `${z}/${x}/${y}`;
+    if (tileCache.has(key)){
+      const p = tileCache.get(key);
+      tileCache.delete(key); tileCache.set(key, p); // refresh LRU position
+      return p;
+    }
+    const p = fetchTileOnce(z, x, y)
+      .catch(() => new Promise(r => setTimeout(r, 800)).then(() => fetchTileOnce(z, x, y)))
+      .catch(err => { tileCache.delete(key); throw err; });
+    tileCache.set(key, p);
+    while (tileCache.size > TILE_CACHE_MAX) tileCache.delete(tileCache.keys().next().value);
+    return p;
+  }
+
+  function mercatorPx(lat, lng, z){
+    const n = 256 * 2 ** z, r = lat * Math.PI / 180;
+    return [(lng + 180) / 360 * n, (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n];
+  }
+
+  // Smallest zoom whose pixels are no larger than the grid spacing, capped at
+  // 12 because the source data outside a few countries is ~30 m anyway.
+  function zoomFor(lat, dx){
+    const z = Math.ceil(Math.log2(156543.03 * Math.cos(lat * Math.PI / 180) / dx));
+    return Math.max(8, Math.min(12, z));
+  }
+
+  // Raw elevation grid (sea below zero, as the tiles store bathymetry).
+  async function buildGrid(lat0, lng0, N, dx){
+    const z = zoomFor(lat0, dx);
+    const ml = mLng(lat0), half = N * dx / 2;
+    const corners = [[-half, -half], [half, half], [-half, half], [half, -half]]
+      .map(([x, y]) => mercatorPx(lat0 + y / M_LAT, lng0 + x / ml, z));
+    const tx0 = Math.floor((Math.min(...corners.map(c => c[0])) - 2) / 256);
+    const tx1 = Math.floor((Math.max(...corners.map(c => c[0])) + 2) / 256);
+    const ty0 = Math.floor((Math.min(...corners.map(c => c[1])) - 2) / 256);
+    const ty1 = Math.floor((Math.max(...corners.map(c => c[1])) + 2) / 256);
+    const tiles = new Map();
+    const jobs = [];
+    for (let ty = ty0; ty <= ty1; ty++){
+      for (let tx = tx0; tx <= tx1; tx++){
+        jobs.push(loadTile(z, tx, ty).then(e => tiles.set(`${tx},${ty}`, e)));
+      }
+    }
+    await Promise.all(jobs);
+    const at = (px, py) => {
+      const tx = Math.floor(px / 256), ty = Math.floor(py / 256);
+      const t = tiles.get(`${tx},${ty}`);
+      return t ? t[(py - ty * 256) * 256 + (px - tx * 256)] : 0;
+    };
+    const h = new Float32Array(N * N);
+    for (let j = 0; j < N; j++){
+      const y = (j - N / 2 + 0.5) * dx;
+      const lat = lat0 + y / M_LAT;
+      for (let i = 0; i < N; i++){
+        const x = (i - N / 2 + 0.5) * dx;
+        const [px, py] = mercatorPx(lat, lng0 + x / ml, z);
+        const x0 = Math.floor(px - 0.5), y0 = Math.floor(py - 0.5);
+        const fx = px - 0.5 - x0, fy = py - 0.5 - y0;
+        h[j * N + i] = at(x0, y0) * (1 - fx) * (1 - fy) + at(x0 + 1, y0) * fx * (1 - fy)
+                     + at(x0, y0 + 1) * (1 - fx) * fy + at(x0 + 1, y0 + 1) * fx * fy;
+      }
+    }
+    return { lat0, lng0, N, dx, zoom: z, h };
+  }
+
+  const toLocal = (grid, lat, lng) => ({ x: (lng - grid.lng0) * mLng(grid.lat0), y: (lat - grid.lat0) * M_LAT });
+  const toLatLng = (grid, x, y) => ({ lat: grid.lat0 + y / M_LAT, lng: grid.lng0 + x / mLng(grid.lat0) });
+
+  return {
+    fft2d, innerLayerHeight, prepareSpectrum, speedupBasis, speedupFromBasis, sectorFactor,
+    sample, rix, slope, buildGrid, loadTile, zoomFor, mercatorPx, toLocal, toLatLng, M_LAT, mLng
+  };
+})();
+
+// ---------- Terrain pipeline ----------
+// One elevation grid covers every turbine and the site boundary, with at least
+// 4 km of margin so the RIX radius and the upwind terrain stay clear of the
+// tapered edge. Speed-up fields are cached per hub height and roughness, and
+// each turbine keeps its three basis values so sector speed-ups for any wind
+// rose come straight out of recalculate().
+const TERRAIN_N = 512;
+const TERRAIN_TAPER = 0.15;
+const TERRAIN_MARGIN_M = 4000;
+const TERRAIN_SLACK_M = 1000;          // extra room so small layout changes reuse the grid
+const TERRAIN_MIN_DX = 25, TERRAIN_MAX_DX = 250;
+const RIX_WARN_PCT = 5;
+const SPEEDUP_MIN = -0.5, SPEEDUP_MAX = 1.0;  // numerical guard rails only
+let terrainGrid = null;      // { lat0, lng0, N, dx, zoom, h, spec, basis }
+let terrainStatus = 'idle';  // 'idle' | 'loading' | 'ready' | 'failed'
+let terrainRunToken = 0;
+let terrainTimer = null;
+
+function scheduleTerrainUpdate(delay = 450){
+  clearTimeout(terrainTimer);
+  terrainTimer = setTimeout(() => { updateTerrain(); }, delay);
+}
+
+function terrainZ0(){ return Math.max(numOrDefault(document.getElementById('roughnessSelect').value, 0.03), 0.0002); }
+function clampSpeedup(s){ return Math.max(SPEEDUP_MIN, Math.min(SPEEDUP_MAX, Number.isFinite(s) ? s : 0)); }
+
+function terrainPoints(){
+  const pts = turbines.map(t => ({ lat: t.lat, lng: t.lng }));
+  if (siteArea) siteArea.ring.forEach(q => pts.push({ lat: q.lat, lng: q.lng }));
+  return pts;
+}
+
+function terrainDomainFor(pts){
+  let latMin = 90, latMax = -90, lngMin = 180, lngMax = -180;
+  pts.forEach(q => {
+    latMin = Math.min(latMin, q.lat); latMax = Math.max(latMax, q.lat);
+    lngMin = Math.min(lngMin, q.lng); lngMax = Math.max(lngMax, q.lng);
+  });
+  const lat0 = (latMin + latMax) / 2, lng0 = (lngMin + lngMax) / 2;
+  const span = Math.max((lngMax - lngMin) * mPerDegLng(lat0), (latMax - latMin) * M_PER_DEG_LAT);
+  const inner = span + 2 * (TERRAIN_MARGIN_M + TERRAIN_SLACK_M);
+  const dx = Math.ceil(Math.max(TERRAIN_MIN_DX, inner / (1 - 2 * TERRAIN_TAPER) / TERRAIN_N));
+  return { lat0, lng0, dx, span };
+}
+
+// True when every point sits at least the margin inside the untapered region.
+function domainCovers(grid, pts){
+  const half = grid.N * grid.dx * (0.5 - TERRAIN_TAPER) - TERRAIN_MARGIN_M;
+  return pts.every(q => {
+    const l = WPTerrain.toLocal(grid, q.lat, q.lng);
+    return Math.abs(l.x) <= half && Math.abs(l.y) <= half;
+  });
+}
+
+function basisFor(grid, hub){
+  const z0 = terrainZ0();
+  const key = `${Math.round(hub)}|${z0}`;
+  let b = grid.basis.get(key);
+  if (!b){
+    b = WPTerrain.speedupBasis(grid.spec, grid.dx, Math.max(Math.round(hub), 2), z0);
+    grid.basis.set(key, b);
+    if (grid.basis.size > 6) grid.basis.delete(grid.basis.keys().next().value);
+  }
+  return b;
+}
+
+function applyTerrainToTurbines(grid){
+  const { N, dx } = grid;
+  const z0 = terrainZ0();
+  turbines.forEach(t => {
+    const spec = getTurbineSpec(t);
+    const q = WPTerrain.toLocal(grid, t.lat, t.lng);
+    const hRaw = WPTerrain.sample(grid.h, N, dx, q.x, q.y);
+    if (!Number.isFinite(hRaw)){ t.elevationData = { live: false, source: 'none', elevation_m: null }; return; }
+    const b = basisFor(grid, spec.hubHeight);
+    t.elevationData = {
+      live: true,
+      source: 'dem',
+      elevation_m: Math.max(hRaw, 0),
+      atSea: hRaw <= 0,
+      slope_pct: WPTerrain.slope(grid.h, N, dx, q.x, q.y),
+      rix_pct: WPTerrain.rix(grid.h, N, dx, q.x, q.y),
+      basis: [WPTerrain.sample(b.B0, N, dx, q.x, q.y), WPTerrain.sample(b.Bc, N, dx, q.x, q.y), WPTerrain.sample(b.Bs, N, dx, q.x, q.y)],
+      basisHub: Math.round(spec.hubHeight),
+      basisZ0: z0
+    };
+  });
+}
+
+function updateTerrainBadge(){
+  if (terrainStatus !== 'loading') return;
+  const badge = document.getElementById('dataSourceBadge');
+  if (badge) badge.innerHTML = `<span class="data-source live"><span class="dot"></span>Fetching terrain…</span>`;
+}
+
+async function updateTerrain(){
+  const token = ++terrainRunToken;
+  if (turbines.length === 0 && !siteArea){ refreshTerrainOverlays(); return; }
+  // Open water is flat, so an offshore site needs no terrain at all.
+  if (document.getElementById('offshoreToggle').checked){
+    turbines.forEach(t => { t.elevationData = { live: true, source: 'offshore', elevation_m: 0, slope_pct: 0, rix_pct: 0, basis: null }; });
+    refreshTerrainOverlays();
+    renderTurbineCards();
+    recalculate();
+    return;
+  }
+  const pts = terrainPoints();
+  const want = terrainDomainFor(pts);
+  if (want.dx > TERRAIN_MAX_DX){
+    // A layout spread over well over 100 km is outside what one grid can
+    // resolve at hub height; treat the terrain as flat rather than guess.
+    turbines.forEach(t => { t.elevationData = { live: false, source: 'none', elevation_m: null }; });
+    terrainStatus = 'failed';
+    renderTurbineCards();
+    recalculate();
+    return;
+  }
+  let grid = terrainGrid;
+  if (!grid || !domainCovers(grid, pts) || want.dx < grid.dx * 0.7){
+    terrainStatus = 'loading';
+    updateTerrainBadge();
+    renderTurbineCards();
+    try {
+      const g = await WPTerrain.buildGrid(want.lat0, want.lng0, TERRAIN_N, want.dx);
+      if (token !== terrainRunToken) return;
+      g.spec = WPTerrain.prepareSpectrum(g.h, TERRAIN_N, TERRAIN_TAPER);
+      g.basis = new Map();
+      terrainGrid = grid = g;
+    } catch (err) {
+      if (token !== terrainRunToken) return;
+      terrainStatus = 'failed';
+      console.warn('Terrain tiles unavailable, falling back to point elevations from the backend:', err);
+      await fetchElevationsQueued(turbines.filter(t => !t.elevationData || t.elevationData.source !== 'backend'));
+      return;
+    }
+  }
+  terrainStatus = 'ready';
+  applyTerrainToTurbines(grid);
+  refreshTerrainOverlays();
+  renderTurbineCards();
+  recalculate();
+}
+
+// Sector speed-ups for one turbine against the current rose sectors. A stale
+// basis (hub height or roughness changed since the last terrain pass) is used
+// for this pass and a refresh is queued.
+function sectorSpeedups(pos, spec, angles){
+  const ed = pos.elevationData;
+  if (!ed) return angles.map(() => 0);
+  if (ed.source === 'dem' && ed.basis){
+    if (ed.basisHub !== Math.round(spec.hubHeight) || ed.basisZ0 !== terrainZ0()) scheduleTerrainUpdate();
+    const width = 360 / angles.length;
+    return angles.map(th => clampSpeedup(WPTerrain.speedupFromBasis(ed.basis[0], ed.basis[1], ed.basis[2], th, width)));
+  }
+  if (ed.source === 'backend') return angles.map(() => clampSpeedup(ed.iso_speedup || 0));
+  return angles.map(() => 0);
+}
+
+function fmtSignedPct(frac, dp = 1){
+  const v = (frac || 0) * 100;
+  return `${v >= 0 ? '+' : ''}${v.toFixed(dp)}%`;
+}
+
+function terrainWarning(ed){
+  if (!ed) return '';
+  if ((ed.rix_pct || 0) > RIX_WARN_PCT) return `steep ground nearby (RIX ${ed.rix_pct.toFixed(1)}%), so the terrain speed-up may be overstated`;
+  if (ed.steep_backend) return `steep terrain (${ed.max_slope_pct}% slope)`;
+  return '';
+}
+
+// One line on a turbine's terrain and air density, shared by the per-turbine
+// results and the report. p carries the calculated speed-up and density.
+function terrainLine(ed, p, html){
+  if (!ed || !ed.live) return html ? '' : 'Elevation unavailable, so flat ground and sea-level air density are assumed';
+  const parts = [ed.source === 'offshore' || ed.atSea ? 'At sea' : `Elevation ${Math.round(ed.elevation_m)} m`];
+  if (ed.source === 'dem' && !ed.atSea){
+    parts.push(`slope ${Math.round(ed.slope_pct || 0)}%`);
+    parts.push(`RIX ${(ed.rix_pct || 0).toFixed(1)}%`);
+  }
+  if (p && Number.isFinite(p.meanSpeedup)) parts.push(`terrain ${fmtSignedPct(p.meanSpeedup)}`);
+  if (p && p.density) parts.push(`air density ${p.density.rho.toFixed(3)} kg/m³`);
+  let line = parts.join(html ? ' · ' : ', ');
+  const warn = terrainWarning(ed);
+  if (warn) line += html ? ` · <span style="color:var(--amber);">⚠ ${warn}</span>` : ` [${warn}]`;
+  return line;
+}
+
+function terrainSummaryNote(){
+  if (document.getElementById('offshoreToggle').checked) return 'offshore, terrain not modelled';
+  if (terrainStatus === 'ready' && terrainGrid) return `linear flow model on a ${terrainGrid.dx} m grid (AWS Terrain Tiles)`;
+  if (turbines.some(t => t.elevationData && t.elevationData.source === 'backend')) return 'point elevations with a direction-blind 2H/L speed-up (terrain tiles unavailable)';
+  return 'not available, flat ground assumed';
+}
+
+function densitySummaryNote(){
+  return (era5Stats && Number.isFinite(era5Stats.meanT2m))
+    ? `ERA5 site mean temperature (${era5Stats.meanT2m.toFixed(1)} °C at 2 m), lapsed to each hub`
+    : 'standard atmosphere (ERA5 temperature not available)';
+}
+
+// ---------- Backend elevation fallback ----------
+// Used only when the terrain tiles cannot be reached: the backend's point
+// lookup (Open-Elevation) with its direction-blind 2H/L speed-up.
 const elevationCache = {};
 async function fetchAndApplyElevation(pos, opts = {}){
-  // 4-dp key (~11 m), must be at least as fine as the backend's cache key, or
-  // nearby turbines share elevation results (see backend site_elevation comment).
+  // 4-dp key (~11 m), must be at least as fine as the backend's cache key.
   const key = `${pos.lat.toFixed(4)}_${pos.lng.toFixed(4)}`;
   if (elevationCache[key]){
     pos.elevationData = elevationCache[key];
     if (!opts.skipUiUpdate){ renderTurbineCards(); recalculate(); }
     return;
   }
-
   const base = API_BASE.replace(/\/$/, '');
   const url = `${base}/api/site-elevation?lat=${pos.lat}&lon=${pos.lng}`;
   const controller = new AbortController();
@@ -2322,20 +2926,19 @@ async function fetchAndApplyElevation(pos, opts = {}){
     if (!res.ok) throw new Error('Elevation endpoint returned an error');
     const data = await res.json();
     result = {
+      live: true, source: 'backend',
       elevation_m: data.elevation_m,
-      elevation_range_1km_m: data.elevation_range_1km_m,
-      max_slope_pct: data.max_slope_pct,
-      terrain_complex: data.terrain_complex,
-      prominence_m: data.prominence_m,
-      terrain_speedup_fraction: data.terrain_speedup_fraction,
-      air_density_ratio: data.air_density_ratio,
-      live: true
+      slope_pct: null, rix_pct: null, basis: null,
+      iso_speedup: data.terrain_speedup_fraction,
+      steep_backend: data.terrain_complex,
+      max_slope_pct: data.max_slope_pct
     };
+    elevationCache[key] = result;
   } catch (err) {
     clearTimeout(timeout);
-    result = { elevation_m: null, elevation_range_1km_m: null, terrain_complex: false, prominence_m: null, terrain_speedup_fraction: 0.0, air_density_ratio: 1.0, live: false };
+    // Not cached, so a later pass can retry it.
+    result = { live: false, source: 'none', elevation_m: null, slope_pct: null, rix_pct: null, basis: null, iso_speedup: 0 };
   }
-  elevationCache[key] = result;
   pos.elevationData = result;
   if (!opts.skipUiUpdate){
     renderTurbineCards();
@@ -2343,15 +2946,8 @@ async function fetchAndApplyElevation(pos, opts = {}){
   }
 }
 
-// Bulk elevation loading (site-file load, multi-turbine imports): firing one
-// elevation request per turbine simultaneously throws a burst of requests at
-// the free, keyless, no-SLA Open-Elevation service (each turbine call is
-// itself a 13-point batch, a centre point plus two sampling rings), which
-// gets throttled/rejected wholesale for anything more than a handful of
-// turbines at once. This showed up as a real, repeatable failure, reloading
-// or waiting didn't help, because the burst fails the same way every time.
-// Fix: a small concurrency-limited queue with a stagger between requests,
-// plus a visible progress indicator so a 175-turbine load doesn't look stuck.
+// Queued so a large site does not throw a burst of requests at the free,
+// rate-limited elevation service. Fallback path only.
 async function fetchElevationsQueued(turbineList, { concurrency = 3, staggerMs = 350 } = {}){
   const total = turbineList.length;
   let nextIndex = 0, done = 0;
@@ -2374,6 +2970,181 @@ async function fetchElevationsQueued(turbineList, { concurrency = 3, staggerMs =
   renderTurbineCards();
   recalculate();
 }
+
+// ---------- Terrain overlays ----------
+// Two optional map layers from the terrain grid: mean wind speed at hub height
+// (the site's GWA climate run through the flow model, sector by sector) and
+// ground slope. Both are drawn into image overlays whose rows are spaced evenly
+// in Web Mercator, so they sit correctly on the map.
+const windOverlayGroup = L.layerGroup();
+const slopeOverlayGroup = L.layerGroup();
+layerControl.addOverlay(windOverlayGroup, 'Hub height wind speed');
+layerControl.addOverlay(slopeOverlayGroup, 'Terrain slope');
+let windField = null; // { grid, region, at(x, y), uFlat, hub, lo, hi }
+const WIND_RAMP = [[68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], [253, 231, 37]];
+const mercY = lat => Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360));
+const invMercY = y => (2 * Math.atan(Math.exp(y)) - Math.PI / 2) * 180 / Math.PI;
+
+function rampColour(t){
+  const u = Math.max(0, Math.min(1, t)) * (WIND_RAMP.length - 1);
+  const i = Math.min(Math.floor(u), WIND_RAMP.length - 2), f = u - i;
+  const a = WIND_RAMP[i], b = WIND_RAMP[i + 1];
+  return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+}
+
+function fieldOverlay(grid, region, px, colourAt){
+  const sw = WPTerrain.toLatLng(grid, region.x0, region.y0);
+  const ne = WPTerrain.toLatLng(grid, region.x1, region.y1);
+  const canvas = document.createElement('canvas');
+  canvas.width = px; canvas.height = px;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(px, px);
+  const yTop = mercY(ne.lat), yBot = mercY(sw.lat);
+  for (let r = 0; r < px; r++){
+    const lat = invMercY(yTop + (r + 0.5) / px * (yBot - yTop));
+    const y = (lat - grid.lat0) * M_PER_DEG_LAT;
+    for (let c = 0; c < px; c++){
+      const x = region.x0 + (c + 0.5) / px * (region.x1 - region.x0);
+      const col = colourAt(x, y, c, r);
+      if (!col) continue;
+      const o = 4 * (r * px + c);
+      img.data[o] = col[0]; img.data[o + 1] = col[1]; img.data[o + 2] = col[2]; img.data[o + 3] = col[3];
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return L.imageOverlay(canvas.toDataURL('image/png'), [[sw.lat, sw.lng], [ne.lat, ne.lng]], {
+    interactive: false,
+    attribution: 'Elevation: <a href="manual.html#17-data-credits" target="_blank" rel="noopener">Terrain Tiles, Mapzen and others</a>'
+  });
+}
+
+// Mean wind speed field at the rose's hub height. U = Σ w(1 + ΔS) over sectors,
+// with w = frequency × Weibull mean, which collapses onto the three basis fields.
+function buildWindField(grid){
+  const hub = turbines.length ? getTurbineSpec(turbines[0]).hubHeight : 80;
+  const b = basisFor(grid, hub);
+  const { sectorAngles, weibullA, weibullK, freqs } = roseData;
+  const sf = WPTerrain.sectorFactor(360 / sectorAngles.length);
+  let W0 = 0, Wc = 0, Ws = 0;
+  sectorAngles.forEach((th, s) => {
+    const w = (freqs[s] / 100) * weibullA[s] * gammaFn(1 + 1 / weibullK[s]);
+    const t = th * Math.PI / 180;
+    W0 += w; Wc += w * Math.cos(2 * t); Ws += w * Math.sin(2 * t);
+  });
+  const { N, dx } = grid;
+  const half = N * dx * (0.5 - TERRAIN_TAPER);
+  const region = { x0: -half, x1: half, y0: -half, y1: half };
+  const at = (x, y) => {
+    if (!(WPTerrain.sample(grid.h, N, dx, x, y) > 0)) return null; // open water: the land roughness class does not apply
+    return W0 + W0 * WPTerrain.sample(b.B0, N, dx, x, y)
+      + sf * (Wc * WPTerrain.sample(b.Bc, N, dx, x, y) + Ws * WPTerrain.sample(b.Bs, N, dx, x, y));
+  };
+  // Colour range from the 2nd to the 99.5th percentile over land: valleys and
+  // a stray edge pixel cannot stretch the scale, but ridges, which are where
+  // turbines usually go, keep their detail.
+  const vals = [];
+  for (let y = region.y0; y < region.y1; y += dx * 3){
+    for (let x = region.x0; x < region.x1; x += dx * 3){ const u = at(x, y); if (u !== null && Number.isFinite(u)) vals.push(u); }
+  }
+  vals.sort((a, c) => a - c);
+  let lo = vals.length ? vals[Math.floor(0.02 * (vals.length - 1))] : W0 * 0.9;
+  let hi = vals.length ? vals[Math.ceil(0.995 * (vals.length - 1))] : W0 * 1.1;
+  lo = Math.floor(lo * 10) / 10; hi = Math.ceil(hi * 10) / 10;
+  if (hi - lo < 0.5){ const m = (hi + lo) / 2; lo = m - 0.25; hi = m + 0.25; }
+  return { grid, region, at, uFlat: W0, hub, lo, hi };
+}
+
+const terrainLegend = L.control({ position: 'bottomleft' });
+terrainLegend.onAdd = function(){
+  const div = L.DomUtil.create('div');
+  div.id = 'terrainLegend';
+  div.style.cssText = 'background:rgba(255,255,255,0.92);border:1px solid #d6dbe1;border-radius:6px;padding:7px 10px;font:10.5px var(--mono);color:#3a4048;box-shadow:0 1px 4px rgba(0,0,0,0.12);max-width:220px;';
+  return div;
+};
+let terrainLegendOn = false;
+function setTerrainLegend(html){
+  if (html){
+    if (!terrainLegendOn){ terrainLegend.addTo(map); terrainLegendOn = true; }
+    document.getElementById('terrainLegend').innerHTML = html;
+  } else if (terrainLegendOn){
+    map.removeControl(terrainLegend);
+    terrainLegendOn = false;
+  }
+}
+
+function refreshTerrainOverlays(){
+  const windOn = map.hasLayer(windOverlayGroup), slopeOn = map.hasLayer(slopeOverlayGroup);
+  windOverlayGroup.clearLayers();
+  slopeOverlayGroup.clearLayers();
+  windField = null;
+  if (!windOn && !slopeOn){ setTerrainLegend(null); return; }
+  const offshore = document.getElementById('offshoreToggle').checked;
+  const grid = (terrainStatus === 'ready' && !offshore) ? terrainGrid : null;
+  const why = offshore ? 'Not drawn for offshore sites.'
+    : terrainStatus === 'loading' ? 'Fetching terrain…'
+    : terrainStatus === 'failed' ? 'Terrain data could not be loaded.'
+    : 'Place a turbine or draw a site area to build the terrain grid.';
+  const parts = [];
+  if (windOn){
+    if (grid && roseData){
+      windField = buildWindField(grid);
+      const wf = windField;
+      windOverlayGroup.addLayer(fieldOverlay(grid, wf.region, 384, (x, y) => {
+        const u = wf.at(x, y);
+        if (u === null || !Number.isFinite(u)) return null;
+        const c = rampColour((u - wf.lo) / (wf.hi - wf.lo));
+        return [c[0], c[1], c[2], 170];
+      }));
+      parts.push(`<div style="font-weight:600;">Wind speed at ${Math.round(wf.hub)} m (m/s)</div>` +
+        `<div style="width:190px;height:10px;margin:5px 0 3px;border-radius:2px;background:linear-gradient(to right,${WIND_RAMP.map(c => `rgb(${c.join(',')})`).join(',')});"></div>` +
+        `<div style="display:flex;justify-content:space-between;width:190px;"><span>${wf.lo.toFixed(1)}</span><span>${wf.hi.toFixed(1)}</span></div>` +
+        `<div id="windCursorReadout" style="margin-top:4px;color:#5a6068;">Hover the map for a value</div>`);
+    } else {
+      parts.push(`<div style="font-weight:600;">Hub height wind speed</div><div style="margin-top:3px;">${grid ? 'Waiting for the wind rose.' : why}</div>`);
+    }
+  }
+  if (slopeOn){
+    if (grid){
+      const { N, dx } = grid;
+      const half = N * dx / 2 - dx;
+      slopeOverlayGroup.addLayer(fieldOverlay(grid, { x0: -half, x1: half, y0: -half, y1: half }, 512, (x, y, c, r) => {
+        const s = WPTerrain.slope(grid.h, N, dx, x, y);
+        if (s === null || s < 10) return null;
+        if (s < 20) return [246, 226, 122, 150];
+        if (s < 30) return [240, 160, 64, 175];
+        return ((c + r) % 6 < 2) ? [255, 255, 255, 210] : [215, 48, 31, 190];
+      }));
+      const sw = (bg) => `<span style="display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;background:${bg};"></span>`;
+      parts.push(`<div style="font-weight:600;">Terrain slope</div>` +
+        `<div style="margin-top:3px;">${sw('rgba(246,226,122,0.75)')}10 to 20%</div>` +
+        `<div>${sw('rgba(240,160,64,0.8)')}20 to 30%</div>` +
+        `<div>${sw('repeating-linear-gradient(45deg,#d7301f 0 3px,#fff 3px 4.5px)')}over 30%, where linear flow models overpredict</div>`);
+    } else {
+      parts.push(`<div style="font-weight:600;">Terrain slope</div><div style="margin-top:3px;">${why}</div>`);
+    }
+  }
+  setTerrainLegend(parts.join('<div style="height:8px;"></div>'));
+}
+
+map.on('overlayadd overlayremove', (e) => {
+  if (e.layer !== windOverlayGroup && e.layer !== slopeOverlayGroup) return;
+  if (e.type === 'overlayadd' && !terrainGrid && (turbines.length || siteArea)) scheduleTerrainUpdate(0);
+  refreshTerrainOverlays();
+});
+
+map.on('mousemove', (e) => {
+  if (!windField || !map.hasLayer(windOverlayGroup)) return;
+  const el = document.getElementById('windCursorReadout');
+  if (!el) return;
+  const q = WPTerrain.toLocal(windField.grid, e.latlng.lat, e.latlng.lng);
+  const r = windField.region;
+  if (q.x < r.x0 || q.x > r.x1 || q.y < r.y0 || q.y > r.y1){ el.textContent = 'Outside the modelled area'; return; }
+  const u = windField.at(q.x, q.y);
+  const d = (u === null || !Number.isFinite(u)) ? null : u / windField.uFlat - 1;
+  el.textContent = d === null
+    ? 'Open water, not modelled'
+    : `${u.toFixed(1)} m/s here, ${Math.abs(d * 100).toFixed(0)}% ${d >= 0 ? 'above' : 'below'} flat ground`;
+});
 
 function syntheticMeanWindSpeed(lat, lng, hubHeight, shear){
   const base = 5.5 + (lat - 50) * 0.18;
@@ -2400,72 +3171,121 @@ function gammaFn(z){
 function weibullParamsFromMean(vMean, k = 2.0){ return { A: vMean / gammaFn(1 + 1 / k), k }; }
 function weibullPdf(v, A, k){ if (v <= 0) return 0; return (k / A) * Math.pow(v / A, k - 1) * Math.exp(-Math.pow(v / A, k)); }
 
-// ---------- Power curve: smooth, specific-power-calibrated approximation ----------
-// v10.3: replaces the earlier cubic ramp (P ∝ (v³-vCutIn³)/(vRated³-vCutIn³)), which
-// used the manufacturer's nameplate "rated wind speed" as the curve's saturation
-// point. That nameplate figure is a conservative IEC-certification value, not the
-// speed at which the real machine actually reaches rated output, real turbines
-// hold close to their maximum power coefficient across a wide speed range and
-// saturate well before their nameplate rated speed. Using nameplate rated speed as
-// a hard cubic endpoint under-delivers badly in the 6-11 m/s range that dominates
-// most UK sites (verified during a real-farm validation: the V80-2.0's 16 m/s
-// nameplate rated speed made the old model deliver roughly a third of the output
-// physics implies at 6-10 m/s). See the Wiki (Methodology §13) for the full
-// derivation, validation, and honest limitations of what replaces it below.
-//
-// New model: a logistic (sigmoid) curve anchored on each turbine's own physical
-// size via its power coefficient (Cp) rather than a single nameplate number:
-//   1. v50 = the wind speed at which an idealised constant-Cp turbine of this
-//      rotor size would produce exactly half its rated power:
-//        0.5 * ratedKW*1000 = 0.5 * rho * (π(D/2)²) * cpMax * v50³
-//   2. P(v) = ratedKW / (1 + exp(-b·(v - v50))), a smooth S-curve through that
-//      anchor point, clipped to [0, ratedKW] and to [vCutIn, vCutOut].
-//   3. b sets the transition width: chosen so the curve moves from 5% to 95% of
-//      rated power over a ±3 m/s window around v50, a plausible ramp width for
-//      a modern pitch-regulated 3-blade turbine.
-// cpMax = 0.45 is a single literature-typical maximum power coefficient (modern
-// turbines: ~0.45-0.48 vs. the 0.593 Betz limit; see Manwell, McGowan & Rogers,
-// "Wind Energy Explained") applied fleet-wide, NOT a per-model tuned figure.
-// Real manufacturer power-curve tables are locked inside proprietary datasheet
-// graphics (images, not machine-readable data) and weren't obtainable here.
-//
-// Honest limitation: this is a generic smooth approximation, not a digitized
-// manufacturer curve. It was validated by checking that it implies a physically
-// plausible hub-height mean wind speed (~6.9 m/s) to reproduce a real UK farm's
-// published net capacity factor, a reasonable sanity check, not proof of
-// per-model accuracy. Digitizing real manufacturer curves remains on the roadmap.
-const POWER_CURVE_RHO = 1.225;       // sea-level air density, kg/m³ (site elevation is handled separately via the density-ratio correction)
-const POWER_CURVE_TRANSITION_W = 3.0; // m/s half-width of the 5%-95% ramp around v50
+// ---------- Power curve ----------
+// A Cp-limited cube with a fixed loss, rounded smoothly into rated power:
+//   P(v) = Pr · x / (1 + xⁿ)^(1/n),   x = (½ρA·C·v³ − λ·Pr) / Pr
+// λ is a fixed drivetrain and electrical loss as a share of rated power, and n
+// sets how sharply the curve turns into rated. Both were fitted to sixteen
+// manufacturer curves (Enercon and GE, specific power 220 to 600 W/m²), which
+// they reproduce to about 1.3% RMS on annual energy at mean wind speeds of 5 to
+// 10 m/s. An Adwen 5 MW curve held out of the fit is matched about as well. The
+// logistic curve this replaces under-predicted the same set by about 9% on
+// average, mostly because it reached real output levels too late between 4 and
+// 8 m/s.
+// The two fitted parameters contain information from the OpenEnergy Platform
+// wind turbine library (via windpowerlib), which is made available under the
+// Open Database License (ODbL 1.0). The curves themselves are not included.
+// C is solved per turbine so the finished curve peaks at exactly the Cp_max
+// entered. Air density acts on the cube term only, so output at rated does not
+// change with density, which is how pitch-regulated machines behave.
+const POWER_CURVE_RHO = 1.225;  // reference density, kg/m³
+const PC_LOSS_FRACTION = 0.012;
+const PC_KNEE_N = 4.1;
+const _pcCoefCache = new Map();
+const _pcTableCache = new Map();
+const _kneeCache = new Map();
+function pcKey(t){ return `${t.ratedKW}|${t.rotorD}|${t.cpMax || 0.45}`; }
 
-function powerCurveKW(v, t){
-  if (v < t.vCutIn || v >= t.vCutOut) return 0;
+function pcRaw(v, t, C, rho){
+  const area = Math.PI * t.rotorD * t.rotorD / 4;
+  const x = (0.5 * rho * area * C * v * v * v / 1000 - PC_LOSS_FRACTION * t.ratedKW) / t.ratedKW;
+  if (x <= 0) return 0;
+  return t.ratedKW * x / Math.pow(1 + Math.pow(x, PC_KNEE_N), 1 / PC_KNEE_N);
+}
+
+// The aerodynamic coefficient C that makes the curve's peak P/(½ρAv³) equal
+// Cp_max. Peak Cp rises monotonically with C, so bisection is safe.
+function pcCoefficient(t){
+  const key = pcKey(t);
+  const hit = _pcCoefCache.get(key);
+  if (hit !== undefined) return hit;
   const cp = t.cpMax || 0.45;
-  const area = Math.PI * Math.pow(t.rotorD / 2, 2);
-  const denom = POWER_CURVE_RHO * area * cp;
-  if (denom <= 0 || t.ratedKW <= 0) return 0; // guard against a malformed custom turbine
-  const v50 = Math.cbrt((t.ratedKW * 1000) / denom);
-  const b = Math.log(0.95 / 0.05) / POWER_CURVE_TRANSITION_W;
-  const p = t.ratedKW / (1 + Math.exp(-b * (v - v50)));
-  // Cp clamp (v13): the sigmoid is anchored BY Cp_max (it locates v50) but its
-  // shape was not bounded by it, implied Cp peaked at 0.470 vs a declared
-  // 0.45 near v50. The clamp closes that internal inconsistency (~0.5% of
-  // gross on an offshore Weibull). NB it does NOT close the larger ~+5.5%
-  // validation gap, which is curve SHAPE above the Cp peak (sigmoid holds max
-  // Cp through 9-12 m/s where real Cp declines), see manual §13a.
-  const cpLimitKW = 0.5 * POWER_CURVE_RHO * area * cp * Math.pow(v, 3) / 1000;
-  return Math.min(p, t.ratedKW, cpLimitKW);
+  const area = Math.PI * t.rotorD * t.rotorD / 4;
+  const peak = C => {
+    let m = 0;
+    for (let v = 2; v <= 25; v += 0.05){
+      const c = pcRaw(v, t, C, POWER_CURVE_RHO) * 1000 / (0.5 * POWER_CURVE_RHO * area * v * v * v);
+      if (c > m) m = c;
+    }
+    return m;
+  };
+  let lo = cp * 0.9, hi = cp * 1.6;
+  for (let i = 0; i < 40; i++){
+    const mid = (lo + hi) / 2;
+    if (peak(mid) < cp) lo = mid; else hi = mid;
+  }
+  const C = (lo + hi) / 2;
+  if (_pcCoefCache.size > 500) _pcCoefCache.clear();
+  _pcCoefCache.set(key, C);
+  return C;
 }
 
-function aepMWh(A, k, t){
-  return (expectedPowerKW(A, k, t) * 8760) / 1000;
+function powerCurveKW(v, t, rho = POWER_CURVE_RHO){
+  if (v < t.vCutIn || v >= t.vCutOut) return 0;
+  if (!(t.ratedKW > 0) || !(t.rotorD > 0)) return 0; // guard against a malformed custom turbine
+  return pcRaw(v, t, pcCoefficient(t), rho);
 }
 
-function expectedPowerKW(A, k, t){
+// The curve on a 0.25 m/s grid, cached per turbine and density, since the
+// energy integration evaluates it thousands of times per recalculation. The
+// table is built at the density rounded to 0.0001 kg/m³, the same value as its
+// cache key, so a result never depends on which turbine filled the cache first.
+function powerTable(t, rhoIn){
+  const rho = Math.round(rhoIn * 1e4) / 1e4;
+  const key = `${pcKey(t)}|${t.vCutIn}|${t.vCutOut}|${rho}`;
+  let tab = _pcTableCache.get(key);
+  if (!tab){
+    const vMax = Math.max(30, (t.vCutOut || 25) + 1); // don't truncate custom turbines with cut-out > 30 m/s
+    const n = Math.floor(vMax / 0.25) + 1;
+    tab = new Float64Array(n);
+    for (let i = 0; i < n; i++) tab[i] = powerCurveKW(i * 0.25, t, rho);
+    if (_pcTableCache.size > 400) _pcTableCache.clear();
+    _pcTableCache.set(key, tab);
+  }
+  return tab;
+}
+
+function aepMWh(A, k, t, rho = POWER_CURVE_RHO){
+  return (expectedPowerKW(A, k, t, rho) * 8760) / 1000;
+}
+
+function expectedPowerKW(A, k, t, rho = POWER_CURVE_RHO){
+  const tab = powerTable(t, rho);
   let total = 0;
-  const dv = 0.25;
-  const vMax = Math.max(30, (t.vCutOut || 25) + 1); // don't truncate custom turbines with cut-out > 30 m/s
-  for (let v = 0; v <= vMax; v += dv){ total += weibullPdf(v, A, k) * dv * powerCurveKW(v, t); }
+  for (let i = 0; i < tab.length; i++) total += weibullPdf(i * 0.25, A, k) * 0.25 * tab[i];
   return total;
+}
+
+// ---------- Air density at hub height ----------
+// Standard pressure at the hub's altitude, with the site's mean temperature
+// where ERA5 supplied one. Open-Meteo has already adjusted that temperature to
+// ground level at the site centre, so it only needs lapsing up to each hub.
+// Without it the standard atmosphere is used (15 °C at sea level), which runs
+// about 5 °C warm for UK sites and puts density around 2% low.
+function hubAirDensity(groundElev, hubHeight){
+  const known = Number.isFinite(groundElev);
+  const zHub = Math.max(known ? groundElev : 0, 0) + hubHeight;
+  const p = 101325 * Math.pow(1 - 2.25577e-5 * zHub, 5.25588);
+  let T, source;
+  if (era5Stats && Number.isFinite(era5Stats.meanT2m)){
+    const zRef = (Number.isFinite(era5Stats.elevation) ? Math.max(era5Stats.elevation, 0) : 0) + 2;
+    T = era5Stats.meanT2m + 273.15 - 0.0065 * (zHub - zRef);
+    source = 'era5';
+  } else {
+    T = 288.15 - 0.0065 * zHub;
+    source = 'isa';
+  }
+  return { rho: p / (287.05 * T), tempC: T - 273.15, source, elevationKnown: known };
 }
 
 // Compass bearing from point a to point b, in degrees (0 = North, clockwise)
@@ -2526,23 +3346,26 @@ function wakeGrowthRate(upstreamHubHeight, offshoreMode, z0){
 
 // Thrust coefficient vs wind speed: near-constant ~0.8 below rated output,
 // falling as blade pitch sheds load above it. The knee is taken as the speed
-// where the sigmoid power curve reaches ~95% of rated (v50 + transition
-// half-width); above the knee, Ct rolls off as (v_knee/v)^2, a standard
-// screening approximation for pitch-regulated machines (real curves at
-// cut-out sit around 0.1-0.15; this gives ~0.18 at 25 m/s for a 12 m/s knee).
+// where the power curve reaches 95% of rated; above it, Ct rolls off as
+// (v_knee/v)², a standard screening approximation for pitch-regulated machines
+// (real curves at cut-out sit around 0.1 to 0.15).
 function thrustCoefficient(v, vKnee){
   if (v <= vKnee) return WAKE_CT;
   return Math.max(WAKE_CT * Math.pow(vKnee / v, 2), 0.05);
 }
 
-// The power-curve knee speed for a spec: v50 (half-rated speed from the
-// Cp anchoring, same formula as powerCurveKW) plus the transition half-width.
+// Speed at which the power curve reaches 95% of rated, at reference density.
 function ctKneeSpeed(spec){
-  const cp = spec.cpMax || 0.45;
-  const area = Math.PI * Math.pow(spec.rotorD / 2, 2);
-  const denom = POWER_CURVE_RHO * area * cp;
-  if (denom <= 0 || spec.ratedKW <= 0) return 12;
-  return Math.cbrt((spec.ratedKW * 1000) / denom) + POWER_CURVE_TRANSITION_W;
+  if (!(spec.ratedKW > 0) || !(spec.rotorD > 0)) return 12;
+  const key = pcKey(spec);
+  const hit = _kneeCache.get(key);
+  if (hit !== undefined) return hit;
+  const C = pcCoefficient(spec);
+  let v = 3;
+  while (v < 30 && pcRaw(v, spec, C, POWER_CURVE_RHO) < 0.95 * spec.ratedKW) v += 0.05;
+  if (_kneeCache.size > 500) _kneeCache.clear();
+  _kneeCache.set(key, v);
+  return v;
 }
 
 // Sector-effective Ct: the Weibull-weighted mean of Ct(v) over one sector's
@@ -2587,12 +3410,10 @@ function gaussianDeficit(x, y, dz, D0, kStar, Ct){
 // This captures ROTOR-INDUCED blockage only. Measured offshore blockage
 // (Bleeg 2018, 2-4% of AEP) includes an atmospheric/global component this
 // cannot represent, so the result is a physically-grounded LOWER BOUND. It is
-// displayed beside loss 1c for the user to adopt, never auto-applied.
+// shown beside loss 1c for reference only. Applied automatically (v13 to v14)
+// it came out close to zero at normal spacings (0.02% at London Array), which
+// took blockage out of every result, so 1c is an editable default again.
 const BLOCKAGE_CT = 0.8;
-// Auto-apply: the computed figure is written into the 1c input on every
-// recalculation until the user edits the field, which hands control back to
-// them (same pattern as overall uncertainty). Their value is never fought.
-let blockageAuto = true;
 function computeBlockagePct(){
   if (!roseData || turbines.length < 2) return null;
   const { sectorAngles, freqs } = roseData;
@@ -2630,31 +3451,9 @@ function updateBlockageHint(){
   const hint = document.getElementById('blockageHint');
   if (!hint) return;
   const pct = computeBlockagePct();
-  const input = document.querySelector('[data-loss="blockage"]');
-  if (pct === null){
-    hint.innerHTML = 'DNV documented range: 0&ndash;4% of AEP. Set a site centre for a calculated estimate.';
-    return;
-  }
-  if (blockageAuto && input && parseFloat(input.value) !== parseFloat(pct.toFixed(2))){
-    input.value = pct.toFixed(2);
-    // The changed value feeds this recalculation via getLossInputs, no
-    // re-entrant recalculate() needed.
-  }
-  if (blockageAuto){
-    hint.innerHTML = `<strong>Calculated and applied: ${pct.toFixed(2)}%</strong> ` +
-      `(vortex-cylinder, rotor induction only: a lower bound that excludes atmospheric blockage). ` +
-      `DNV documented range 0&ndash;4%. Edit the field to take over manually.`;
-  } else {
-    hint.innerHTML = `DNV documented range: 0&ndash;4% of AEP. <strong>Calculated: ${pct.toFixed(2)}%</strong> ` +
-      `(rotor induction only, a lower bound). Manual value in use. ` +
-      `<a href="#" id="applyBlockageLink" style="color:var(--accent);">re-apply calculated</a>`;
-    const link = document.getElementById('applyBlockageLink');
-    if (link) link.onclick = (e) => {
-      e.preventDefault();
-      blockageAuto = true;
-      if (input){ input.value = pct.toFixed(2); recalculate(); }
-    };
-  }
+  const base = 'Default 2%, edit to suit. DNV documented range 0&ndash;4% of AEP.';
+  hint.innerHTML = pct === null ? base
+    : `${base} Calculated rotor induction for this layout: <strong>${pct.toFixed(2)}%</strong>, a lower bound that leaves out atmospheric blockage, shown for reference.`;
 }
 
 // Fallback for when no site centre / rose data is set yet: worst-case
@@ -2689,11 +3488,10 @@ function wakeDeficitFor(turbine, others, rotorD, offshoreMode){
 // binning, so no discontinuities from small turbine moves.
 const WAKE_SUB_BEARINGS = [-0.4, -0.2, 0, 0.2, 0.4]; // fractions of sector width
 
-function directionWeightedAEP(turbinePos, allTurbines, turbineSpec, offshoreMode, terrainSpeedupFraction, z0, extraWakeSources){
+function directionWeightedAEP(turbinePos, allTurbines, turbineSpec, offshoreMode, sectorSpeedup, z0, extraWakeSources, rho = POWER_CURVE_RHO){
   const { sectorAngles, weibullA, weibullK, freqs } = roseData;
   const sectorWidth = 360 / sectorAngles.length;
-  const terrainFactor = 1 + (terrainSpeedupFraction || 0);
-  let grossPower = 0, wakeAdjustedPower = 0, meanWind = 0;
+  let grossPower = 0, wakeAdjustedPower = 0, meanWind = 0, meanWindFlat = 0;
 
   // Pre-resolve neighbour geometry once (specs, bearings, distances).
   // extraWakeSources (external/OSM turbines) enter the SAME wake mathematics
@@ -2729,9 +3527,12 @@ function directionWeightedAEP(turbinePos, allTurbines, turbineSpec, offshoreMode
   const neighbours = internalN.concat(externalN);
 
   sectorAngles.forEach((sectorBearing, s) => {
-    const A = weibullA[s] * terrainFactor, k = weibullK[s], freqFrac = freqs[s] / 100;
-    grossPower += freqFrac * expectedPowerKW(A, k, turbineSpec);
+    // Terrain enters per sector: the flow model's speed-up for winds from this
+    // sector scales the sector's Weibull A.
+    const A = weibullA[s] * (1 + ((sectorSpeedup && sectorSpeedup[s]) || 0)), k = weibullK[s], freqFrac = freqs[s] / 100;
+    grossPower += freqFrac * expectedPowerKW(A, k, turbineSpec, rho);
     meanWind += freqFrac * A * gammaFn(1 + 1 / k); // sector Weibull mean, frequency-weighted
+    meanWindFlat += freqFrac * weibullA[s] * gammaFn(1 + 1 / k);
 
     // Sector-effective Ct per unique upstream turbine class (usually one for
     // the whole fleet), Weibull-weighted over THIS sector's wind distribution.
@@ -2755,7 +3556,7 @@ function directionWeightedAEP(turbinePos, allTurbines, turbineSpec, offshoreMode
         sumSq += def * def;
       });
       const deficit = Math.min(Math.sqrt(sumSq), 0.99);
-      sectorWakePower += expectedPowerKW(A * (1 - deficit), k, turbineSpec);
+      sectorWakePower += expectedPowerKW(A * (1 - deficit), k, turbineSpec, rho);
     });
     wakeAdjustedPower += freqFrac * (sectorWakePower / WAKE_SUB_BEARINGS.length);
   });
@@ -2763,13 +3564,14 @@ function directionWeightedAEP(turbinePos, allTurbines, turbineSpec, offshoreMode
   const grossAep = (grossPower * 8760) / 1000;
   const wakeAdjustedAep = (wakeAdjustedPower * 8760) / 1000;
   const wakeDeficit = grossAep > 0 ? 1 - wakeAdjustedAep / grossAep : 0;
-  return { grossAep, wakeAdjustedAep, wakeDeficit, meanWind };
+  const meanSpeedup = meanWindFlat > 0 ? meanWind / meanWindFlat - 1 : 0;
+  return { grossAep, wakeAdjustedAep, wakeDeficit, meanWind, meanSpeedup };
 }
 
 // ---------- Interannual variability (IAV) ----------
-// Year-by-year annual mean wind speeds from NASA POWER's monthly record
-// (via the backend /api/iav endpoint, one regional fetch per analysis).
-// The series is detrended (linear fit removed) so long-term wind trends
+// Year-by-year annual mean wind speeds from the ERA5 record (backend
+// /api/era5-resource), or from NASA POWER's monthly record (/api/iav) if ERA5
+// fails. One regional fetch per site centre. The series is detrended (linear fit removed) so long-term wind trends
 // don't masquerade as year-to-year noise, scaled to the fleet's actual
 // operating wind speed, and each year run through the power-curve pipeline -
 // giving an ENERGY variability directly rather than a wind-speed figure
@@ -2804,7 +3606,13 @@ async function fetchIAV(lat, lng){
     if (!res.ok) throw new Error('era5 endpoint error');
     const data = await res.json();
     iavData = { annualMeans: data.annual_means_100m, nYears: data.n_years, source: 'era5' };
-    era5Stats = { icing: data.icing, hysteresis: data.hysteresis, nYears: data.n_years, monthly: data.monthly_mean_100m || null };
+    era5Stats = {
+      icing: data.icing, hysteresis: data.hysteresis, nYears: data.n_years, monthly: data.monthly_mean_100m || null,
+      // Mean 2 m temperature for the air density, and the ground height Open-Meteo
+      // adjusted it to. Older backends send neither, and density then stays standard.
+      meanT2m: Number.isFinite(data.mean_temperature_2m_c) ? data.mean_temperature_2m_c : null,
+      elevation: Number.isFinite(data.era5_elevation_m) ? data.era5_elevation_m : null
+    };
     era5Failure = data.monthly_mean_100m ? null : 'the backend returned no monthly data (older backend version?)';
     updateEra5Hints();
   } catch (err) {
@@ -2929,7 +3737,7 @@ let lastResults = null; // populated at the end of recalculate(), read by the re
 
 // Debounced wrapper, collapses rapid-fire triggers (fast map clicks, quick successive
 // coordinate edits) into a single recalculation instead of firing a burst of API calls
-// at NASA POWER / GWA / Open-Elevation.
+// at the backend.
 let recalcDebounceTimer = null;
 function scheduleRecalculate(delay = 350){
   clearTimeout(recalcDebounceTimer);
@@ -2951,10 +3759,6 @@ async function recalculate(){
 
   checkSiteCentreDistance();
   updateSpacingGuides();
-  if (!siteCentre && turbines.length > 0){
-    const c = turbineCentroid();
-    fetchIAV(c.lat, c.lng); // no-op if this region was already fetched
-  }
   const shear = getShearSettings();
   const offshoreMode = document.getElementById('offshoreToggle').checked;
   const useDirectionWeighted = roseData !== null;
@@ -2962,31 +3766,29 @@ async function recalculate(){
   let sumExtWakeAep = 0; // MWh lost to external wake (loss 1b), density-corrected
   let anyLive = false, anyFallback = false;
 
+  const angles = useDirectionWeighted ? roseData.sectorAngles : Array.from({ length: 12 }, (_, i) => i * 30);
   for (const pos of turbines){
     const t = getTurbineSpec(pos);
-    const densityRatio = (pos.elevationData && pos.elevationData.air_density_ratio) || 1.0;
-    const terrainSpeedup = (pos.elevationData && pos.elevationData.terrain_speedup_fraction) || 0.0;
+    // Density at hub height goes into the power curve itself, so only output
+    // below rated responds to it. Terrain arrives as one speed-up per sector.
+    const dens = hubAirDensity(pos.elevationData ? pos.elevationData.elevation_m : null, t.hubHeight);
+    const sectorSU = sectorSpeedups(pos, t, angles);
 
     if (useDirectionWeighted){
-      // Real methodology: per-sector Weibull data + direction-aware wake, weighted by actual sector frequency.
-      // Terrain speed-up scales wind speed (the A parameter, inside directionWeightedAEP); air density scales
-      // power output directly, these are physically different corrections, applied at the right stage each.
-      // Two passes when external neighbours are active: internal-only gives
-      // loss 1a; internal+external gives the total, and 1b is the difference.
-      // Computing them separately keeps the waterfall's 1a/1b split honest
-      // instead of burying externals inside "wake".
+      // Per-sector Weibull data and direction-aware wake, weighted by sector
+      // frequency. Two passes when external neighbours are active: internal-only
+      // gives loss 1a, internal plus external gives the total, and 1b is the
+      // difference, so the waterfall's 1a/1b split stays honest.
       const exts = (externalsIncluded && externalNeighbours.length) ? externalNeighbours : null;
-      const result = directionWeightedAEP(pos, turbines, t, offshoreMode, terrainSpeedup, shear.z0);
+      const result = directionWeightedAEP(pos, turbines, t, offshoreMode, sectorSU, shear.z0, null, dens.rho);
       let extWakeFrac = 0;
       if (exts){
-        const rTot = directionWeightedAEP(pos, turbines, t, offshoreMode, terrainSpeedup, shear.z0, exts);
+        const rTot = directionWeightedAEP(pos, turbines, t, offshoreMode, sectorSU, shear.z0, exts, dens.rho);
         // Fraction of the INTERNALLY-waked energy lost additionally to externals
         extWakeFrac = result.wakeAdjustedAep > 0 ? Math.max(0, 1 - rTot.wakeAdjustedAep / result.wakeAdjustedAep) : 0;
-        sumExtWakeAep += result.wakeAdjustedAep * extWakeFrac * densityRatio;
+        sumExtWakeAep += result.wakeAdjustedAep * extWakeFrac;
       }
-      result.grossAep *= densityRatio;
-      result.wakeAdjustedAep *= densityRatio;
-      perTurbine.push({ ...result, ratedKW: t.ratedKW });
+      perTurbine.push({ ...result, ratedKW: t.ratedKW, sectorSU, angles, density: dens });
       anyLive = anyLive || roseData.live;
       anyFallback = anyFallback || !roseData.live;
     } else {
@@ -2999,13 +3801,15 @@ async function recalculate(){
       if (liveResult){ vMeanRaw = liveResult.vMean; kEstimate = liveResult.k || 2.0; anyLive = true; }
       else { vMeanRaw = syntheticMeanWindSpeed(pos.lat, pos.lng, pos.hubHeight, shear); anyFallback = true; }
 
-      const vTerrainAdjusted = vMeanRaw * (1 + terrainSpeedup); // terrain speed-up applied to wind speed itself
+      // No rose on this path, so the sector speed-ups are simply averaged.
+      const meanSpeedup = sectorSU.reduce((s, x) => s + x, 0) / sectorSU.length;
+      const vTerrainAdjusted = vMeanRaw * (1 + meanSpeedup);
       const { A: Agross, k: kgross } = weibullParamsFromMean(vTerrainAdjusted, kEstimate);
-      const grossAep = aepMWh(Agross, kgross, t) * densityRatio;
+      const grossAep = aepMWh(Agross, kgross, t, dens.rho);
       const vEffective = vTerrainAdjusted * (1 - deficit);
       const { A, k } = weibullParamsFromMean(vEffective, kEstimate);
-      const wakeAdjustedAep = aepMWh(A, k, t) * densityRatio;
-      perTurbine.push({ grossAep, wakeAdjustedAep, wakeDeficit: deficit, ratedKW: t.ratedKW, meanWind: vTerrainAdjusted });
+      const wakeAdjustedAep = aepMWh(A, k, t, dens.rho);
+      perTurbine.push({ grossAep, wakeAdjustedAep, wakeDeficit: deficit, ratedKW: t.ratedKW, meanWind: vTerrainAdjusted, meanSpeedup, sectorSU, angles, density: dens });
     }
   }
 
@@ -3055,7 +3859,7 @@ async function recalculate(){
 
   // Aggregate waterfall (for the Results tab)
   let totalGross = 0, totalWakeAdjusted = 0, totalRatedKW = 0;
-  // Aggregate 1b: external-wake energy (density-corrected inside the loop),
+  // Aggregate 1b: external-wake energy (density already inside the curve),
   // expressed below as % of internally-waked energy so it slots into the
   // waterfall AFTER 1a exactly as the multiplicative sequence expects.
   perTurbine.forEach(p => { totalGross += p.grossAep; totalWakeAdjusted += p.wakeAdjustedAep; totalRatedKW += p.ratedKW; });
@@ -3120,8 +3924,8 @@ async function recalculate(){
   // POWER fallback (50 km grid, no rose, heuristic Weibull k), +3% RSS'd in
   // NB: IAV series is ERA5 (~31 km hourly) when available, NASA POWER monthly
   // otherwise, the note text below reports whichever actually supplied it.
-  // if any turbine trips the terrain-complexity flag (the Jackson-Hunt
-  // correction degrades there). Wake: 3% floor + 15% of the calculated wake
+  // if any turbine's RIX exceeds the warning level (the linear flow model
+  // overstates speed-ups on steep ground). Wake: 3% floor + 15% of the calculated wake
   // loss (EYA convention, wake uncertainty scales with wake magnitude).
   // Curve: 3% (generic Cp approximation, site-independent). IAV: computed
   // from the site's detrended reanalysis record where available, literature
@@ -3143,7 +3947,8 @@ async function recalculate(){
     : `IAV: literature default (${iavFallback}% ${offshoreMode ? 'UK waters, DNV' : 'UK onshore, Garrad Hassan/DNV'}), site record unavailable.`;
   const iavPct = parseFloat(document.getElementById('iavInput').value) || iavFallback;
 
-  const anyComplexTerrain = turbines.some(t => t.elevationData && t.elevationData.terrain_complex);
+  const anyComplexTerrain = turbines.some(t => t.elevationData &&
+    ((t.elevationData.rix_pct || 0) > RIX_WARN_PCT || t.elevationData.steep_backend));
   let resourceU = useDirectionWeighted ? 9 : 13;
   if (anyComplexTerrain) resourceU = Math.sqrt(resourceU * resourceU + 9); // +3% RSS
   const wakeU = 3 + 0.15 * overallWakePct;
@@ -3191,8 +3996,14 @@ async function recalculate(){
       lng: pos.lng,
       cpMaxOverridden: pos.model !== 'custom' && pos.cpMax !== undefined,
       meanWind: perTurbine[i] ? perTurbine[i].meanWind : null,
-      elevationData: pos.elevationData ? { ...pos.elevationData } : null
+      meanSpeedup: perTurbine[i] ? perTurbine[i].meanSpeedup : 0,
+      sectorSU: perTurbine[i] ? perTurbine[i].sectorSU : null,
+      angles: perTurbine[i] ? perTurbine[i].angles : null,
+      density: perTurbine[i] ? perTurbine[i].density : null,
+      elevationData: pos.elevationData ? { ...pos.elevationData, basis: undefined } : null
     })),
+    terrainNote: terrainSummaryNote(),
+    densityNote: densitySummaryNote(),
     lossVals,
     manualAdj,
     uncertaintyPct,
@@ -3229,7 +4040,7 @@ async function recalculate(){
   const breakdownContent = document.getElementById('breakdownContent');
   const breakdownEmpty = document.getElementById('breakdownEmptySection');
   breakdownEmpty.style.display = 'none';
-  breakdownContent.innerHTML = `<h2>${useDirectionWeighted ? 'Direction-weighted' : 'Aggregate (set a site centre for direction-weighted)'}</h2>`;
+  breakdownContent.innerHTML = `<h2>${useDirectionWeighted ? 'Direction-weighted' : 'Aggregate (wind rose not available yet)'}</h2>`;
   perTurbineWaterfalls.forEach((wf, i) => {
     const pos = turbines[i];
     const spec = getTurbineSpec(pos);
@@ -3246,9 +4057,7 @@ async function recalculate(){
     const specLine = pos.model === 'custom'
       ? `Custom · ${(spec.ratedKW / 1000).toFixed(2)} MW · D=${spec.rotorD}m · HH=${spec.hubHeight}m · Cp_max=${spec.cpMax} · cut-in ${spec.vCutIn} / cut-out ${spec.vCutOut} m/s`
       : `${spec.manufacturer} ${spec.name} · ${spec.type} · ${(spec.ratedKW / 1000).toFixed(2)} MW · D=${spec.rotorD}m · HH=${spec.hubHeight}m · Cp_max=${spec.cpMax}${pos.cpMax !== undefined ? ' (overridden)' : ''}`;
-    const elevLine = pos.elevationData && pos.elevationData.live
-      ? `Elevation ${pos.elevationData.elevation_m}m · terrain ${pos.elevationData.terrain_speedup_fraction >= 0 ? '+' : ''}${(pos.elevationData.terrain_speedup_fraction * 100).toFixed(1)}% · air density ${(pos.elevationData.air_density_ratio * 100).toFixed(1)}%${pos.elevationData.terrain_complex ? ` · <span style="color:var(--amber);">⚠ steep (${pos.elevationData.max_slope_pct}%)</span>` : ''}`
-      : '';
+    const elevLine = terrainLine(pos.elevationData, perTurbine[i], true);
     card.innerHTML = `
       <div class="turbine-card-header static"><span class="label">T${i + 1}</span></div>
       <div class="hint" style="margin-top:0;">${specLine}</div>
@@ -3280,7 +4089,7 @@ function generateReportText(){
   const line = (ch = '-') => ch.repeat(70);
   const lines = [];
 
-  lines.push('TURBINE YIELD ESTIMATOR, SCREENING REPORT');
+  lines.push('WINDYPINS SCREENING REPORT');
   lines.push(line('='));
   lines.push(`Generated: ${r.generatedAt.toISOString().replace('T', ' ').slice(0, 19)} UTC`);
   lines.push(`Data mode: ${r.dataSourceLabel}`);
@@ -3288,14 +4097,15 @@ function generateReportText(){
     lines.push(`Settings: roughness z0=${r.settings.roughness} m` +
       ` | shear (fallback path only): ${r.settings.shearLaw === 'log' ? 'log law' : `power law, α=${r.settings.shearAlpha}`}` +
       ` | wake growth: ${r.settings.wakeNote || 'n/a'}`);
+    lines.push(`Terrain: ${r.terrainNote || 'n/a'} | air density: ${r.densityNote || 'n/a'}`);
   }
   lines.push('');
   lines.push('*** SCREENING-GRADE ESTIMATE ONLY, NOT AN ENERGY YIELD ASSESSMENT (EYA) ***');
-  lines.push('This report is generated by a non-professional screening tool. No terrain');
-  lines.push('correction is fully modelled, no measured site data is used, and no liability');
-  lines.push('is accepted for decisions based on these numbers. See the Manual (linked from');
-  lines.push('the tool\'s Cover tab) for full methodology and known limitations before');
-  lines.push('using this for anything beyond initial screening.');
+  lines.push('This report comes from a screening tool. Terrain is handled by a linear flow');
+  lines.push('model that is not valid on steep or separated ground, no measured site data');
+  lines.push('is used, and no liability is accepted for decisions based on these numbers.');
+  lines.push('See the Manual (linked from the Cover tab) for the methodology and known');
+  lines.push('limitations before using this for anything beyond initial screening.');
   lines.push(line('='));
   lines.push('');
 
@@ -3315,11 +4125,13 @@ function generateReportText(){
       lines.push(`  ${t.spec.manufacturer} ${t.spec.name} (${t.spec.type}), ${(t.spec.ratedKW / 1000).toFixed(2)} MW, rotor ${t.spec.rotorD}m, hub height ${t.spec.hubHeight}m, Cp_max ${t.spec.cpMax}${t.cpMaxOverridden ? ' (overridden)' : ''}`);
     }
     if (t.meanWind){
-      lines.push(`  Mean hub-height wind speed: ${t.meanWind.toFixed(1)} m/s (pre-wake, incl. terrain speed-up)`);
+      lines.push(`  Mean hub-height wind speed: ${t.meanWind.toFixed(1)} m/s (before wakes, including terrain)`);
     }
-    if (t.elevationData && t.elevationData.live){
-      const su = t.elevationData.terrain_speedup_fraction;
-      lines.push(`  Elevation ${t.elevationData.elevation_m}m, terrain ${su >= 0 ? '+' : ''}${(su * 100).toFixed(1)}% ${su >= 0 ? 'speed-up' : 'slowdown'}, air density ${(t.elevationData.air_density_ratio * 100).toFixed(1)}% of standard${t.elevationData.terrain_complex ? ` [steep terrain: ${t.elevationData.max_slope_pct}% slope]` : ''}`);
+    lines.push('  ' + terrainLine(t.elevationData, t, false));
+    if (t.sectorSU && t.angles && t.elevationData && t.elevationData.source === 'dem'){
+      lines.push('  Terrain speed-up by sector (wind from):');
+      lines.push('  ' + t.angles.map(a => (Math.round(a) + '°').padStart(7)).join(''));
+      lines.push('  ' + t.sectorSU.map(s => fmtSignedPct(s).padStart(7)).join(''));
     }
     lines.push('');
   });
@@ -3334,13 +4146,13 @@ function generateReportText(){
   lines.push(line());
   lines.push('AGGREGATE LOSS WATERFALL (MWh/yr)');
   lines.push(line());
-  lines.push('Stage'.padEnd(28) + 'Loss'.padEnd(10) + 'Impact'.padEnd(12) + 'Remaining');
+  lines.push('Stage'.padEnd(32) + 'Loss'.padEnd(10) + 'Impact'.padEnd(12) + 'Remaining');
   r.aggregateWaterfall.forEach((row, i) => {
     const isLast = i === r.aggregateWaterfall.length - 1;
     const label = isLast ? 'Net' : row.label;
     const pctStr = row.pct === null ? '-' : row.pct.toFixed(1) + '%';
     const impactStr = row.impact === null ? '-' : (row.impact >= 0 ? '-' + row.impact.toFixed(0) : '+' + Math.abs(row.impact).toFixed(0));
-    lines.push(label.padEnd(28) + pctStr.padEnd(10) + impactStr.padEnd(12) + row.remaining.toFixed(0));
+    lines.push(label.padEnd(32) + pctStr.padEnd(10) + impactStr.padEnd(12) + row.remaining.toFixed(0));
   });
   lines.push('');
 
@@ -3377,19 +4189,19 @@ function generateReportText(){
       const label = isLast ? 'Net' : row.label;
       const pctStr = row.pct === null ? '-' : row.pct.toFixed(1) + '%';
       const impactStr = row.impact === null ? '-' : (row.impact >= 0 ? '-' + row.impact.toFixed(0) : '+' + Math.abs(row.impact).toFixed(0));
-      lines.push('  ' + label.padEnd(26) + pctStr.padEnd(10) + impactStr.padEnd(12) + row.remaining.toFixed(0));
+      lines.push('  ' + label.padEnd(32) + pctStr.padEnd(10) + impactStr.padEnd(12) + row.remaining.toFixed(0));
     });
     lines.push('');
   });
 
   lines.push(line('='));
-  lines.push('End of report. Full methodology, data sources, and known limitations are in');
-  lines.push('the Manual, linked from the Cover tab of the tool website.');
+  lines.push('End of report. Full methodology, data sources, known limitations and data');
+  lines.push('credits are in the Manual, linked from the Cover tab of the tool website.');
   lines.push(line('='));
   lines.push('');
   lines.push('This report can be loaded back into the tool via "Load site from file" (Siting tab)');
-  lines.push('to restore this exact site, the block below is structured data the tool reads back');
-  lines.push('in; everything above is just for you to read.');
+  lines.push('to restore this exact site. The block below is structured data the tool reads back');
+  lines.push('in, and everything above is just for you to read.');
   lines.push('');
   lines.push(SITE_DATA_BEGIN);
   lines.push(JSON.stringify(buildSiteState(), null, 2));
@@ -3404,6 +4216,7 @@ function buildSiteState(){
     savedAt: new Date().toISOString(),
     lossSchema: 2, // v12: IEC 61400-15-2 numbered taxonomy, new sub-item keys exist
     siteCentre,
+    siteCentrePinned, // false = following the layout. Absent in older files, which load pinned.
     // v14.1: the drawn boundary and the settings it was last filled with. Absent
     // in older files, which simply load without an area.
     sitingArea: siteArea ? {
@@ -3468,7 +4281,7 @@ document.getElementById('saveSiteBtn').addEventListener('click', () => {
     '',
     'This is a save file for this tool, use "Load site from file" to restore it.',
     'It is plain text so it is easy to check what it contains, but the block below',
-    'is structured data the tool reads back in; edit above this line freely, but',
+    'is structured data the tool reads back in. Edit above this line freely, but',
     'leave the SITE-DATA block itself untouched if you want it to load correctly.',
     '',
     SITE_DATA_BEGIN,
@@ -3489,12 +4302,15 @@ document.getElementById('loadSiteInput').addEventListener('change', async (e) =>
   let state;
   try {
     const text = await file.text();
-    const startIdx = text.indexOf(SITE_DATA_BEGIN);
+    // Match the marker line loosely: files saved before the punctuation
+    // clean-up have a dash where the current marker has a comma.
+    const begin = /===SITE-DATA[^\n]*===/.exec(text);
+    const startIdx = begin ? begin.index : -1;
     const endIdx = text.indexOf(SITE_DATA_END);
     if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx){
       throw new Error('No SITE-DATA block found in this file, it may not be a file this tool produced, or the block was edited/removed.');
     }
-    const jsonText = text.slice(startIdx + SITE_DATA_BEGIN.length, endIdx).trim();
+    const jsonText = text.slice(startIdx + begin[0].length, endIdx).trim();
     state = JSON.parse(jsonText);
   } catch (err) {
     console.error('Site file load failed:', err);
@@ -3524,10 +4340,6 @@ document.getElementById('loadSiteInput').addEventListener('change', async (e) =>
       const t = { id, lat: saved.lat, lng: saved.lng, marker, model: saved.model || 'custom', hubHeight: saved.hubHeight, customSpec: saved.customSpec || { ...TURBINES.custom }, cpMax: saved.cpMax, elevationData: null };
       turbines.push(t);
     });
-    // Queued, not per-turbine-immediate, see fetchElevationsQueued for why.
-    // Awaited so its progress indicator stays visible and doesn't race with
-    // the wind-rose fetch/recalculate below.
-    await fetchElevationsQueued(turbines);
 
     if (state.lossVals){
       // Pre-schema-2 files know nothing of the new sub-items (2c, 3b/3c, 4b/4c,
@@ -3542,21 +4354,21 @@ document.getElementById('loadSiteInput').addEventListener('change', async (e) =>
         const input = document.querySelector(`[data-loss="${key}"]`);
         if (input) input.value = val;
       });
-      // Same principle as uncertainty below: a value restored from file is a
-      // deliberate choice, auto-blockage must not clobber it on the next
-      // recalculation. The re-apply link in the 1c hint restores auto mode.
-      if (state.lossVals.blockage !== undefined) blockageAuto = false;
+      // A file without a blockage value takes the default, whatever the
+      // session had in the field before.
+      if (state.lossVals.blockage === undefined){
+        const el = document.querySelector('[data-loss="blockage"]');
+        if (el) el.value = el.dataset.default;
+      }
       openAdvancedWithEdits();
     }
     if (state.manualAdj !== undefined) document.getElementById('manualAdjustment').value = state.manualAdj;
-    if (state.uncertaintyPct !== undefined){
-      document.getElementById('overallUncertainty').value = state.uncertaintyPct;
-      uncertaintyAuto = false; // a value restored from file is a deliberate choice, don't clobber it
-    }
-    if (state.iavPct !== undefined){
-      document.getElementById('iavInput').value = state.iavPct;
-      iavAuto = false;
-    }
+    // A value restored from file is a deliberate choice, so auto-fill stops.
+    // A file without one goes back to auto-fill.
+    uncertaintyAuto = state.uncertaintyPct === undefined;
+    if (!uncertaintyAuto) document.getElementById('overallUncertainty').value = state.uncertaintyPct;
+    iavAuto = state.iavPct === undefined;
+    if (!iavAuto) document.getElementById('iavInput').value = state.iavPct;
     if (state.shearExponent !== undefined) document.getElementById('shearExponent').value = state.shearExponent;
     if (state.shearLaw !== undefined){
       document.getElementById('shearLawSelect').value = state.shearLaw;
@@ -3586,9 +4398,25 @@ document.getElementById('loadSiteInput').addEventListener('change', async (e) =>
       setAreaPanelState();
     }
 
+    // Terrain after roughness, offshore mode and the boundary are restored,
+    // since all three shape the grid and the speed-ups. A fresh grid every
+    // time, so a loaded file gives the same results in any session.
+    terrainGrid = null;
+    await updateTerrain();
     renderTurbineCards();
     if (state.siteCentre){
-      await setSiteCentre(state.siteCentre.lat, state.siteCentre.lng);
+      // A centre saved in a file loads pinned unless the file recorded that it
+      // was following the layout, so files from before v15 reproduce exactly.
+      siteCentrePinned = state.siteCentrePinned !== false;
+      lastFetchedCentre = null;
+      placeSiteCentre(state.siteCentre.lat, state.siteCentre.lng);
+      if (!siteCentrePinned) syncAutoCentre();
+      await commitSiteCentreFetch();
+    } else {
+      // No saved centre: one commit from the final layout, not one per turbine.
+      siteCentrePinned = false;
+      lastFetchedCentre = null;
+      await syncAutoCentre({ fetchNow: true });
     }
 
     // Zoom the map to the loaded site, previously the map stayed wherever it
@@ -3872,7 +4700,7 @@ function generateCsvText(){
   rows.push(['Net capacity factor (%)', r.capFactor.toFixed(1)]);
   rows.push([]);
   rows.push(['PER-TURBINE']);
-  rows.push(['Turbine', 'Latitude', 'Longitude', 'Model', 'Hub height (m)', 'Cp_max', 'Mean wind (m/s)', 'Gross (MWh/yr)', 'Internal wake loss (%)', 'Net (MWh/yr)']);
+  rows.push(['Turbine', 'Latitude', 'Longitude', 'Model', 'Hub height (m)', 'Cp_max', 'Mean wind (m/s)', 'Elevation (m)', 'Slope (%)', 'RIX (%)', 'Terrain speed-up (%)', 'Air density (kg/m3)', 'Gross (MWh/yr)', 'Internal wake loss (%)', 'Net (MWh/yr)']);
   r.turbines.forEach((t, i) => {
     const wf = r.perTurbineWaterfalls[i];
     const p = wf ? wf.rows : null;
@@ -3881,6 +4709,11 @@ function generateCsvText(){
       t.model === 'custom' ? 'Custom' : t.spec.name,
       t.spec.hubHeight, t.spec.cpMax,
       t.meanWind ? t.meanWind.toFixed(2) : '',
+      t.elevationData && Number.isFinite(t.elevationData.elevation_m) ? Math.round(t.elevationData.elevation_m) : '',
+      t.elevationData && Number.isFinite(t.elevationData.slope_pct) ? t.elevationData.slope_pct.toFixed(1) : '',
+      t.elevationData && Number.isFinite(t.elevationData.rix_pct) ? t.elevationData.rix_pct.toFixed(1) : '',
+      Number.isFinite(t.meanSpeedup) ? (100 * t.meanSpeedup).toFixed(1) : '',
+      t.density ? t.density.rho.toFixed(3) : '',
       wf ? wf.rows[0].remaining.toFixed(0) : '',
       wf && wf.rows[1] && wf.rows[1].pct !== null ? wf.rows[1].pct.toFixed(1) : '',
       wf ? wf.net.toFixed(0) : ''
